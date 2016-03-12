@@ -2,6 +2,8 @@ package bb.rackmesa.research.authorization;
 
 import java.sql.*;
 import java.util.Objects;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * Created by Dan on 3/12/2016.
@@ -9,6 +11,7 @@ import java.util.Objects;
 public class DatabaseFunctions {
 
     private static String connString = "";
+    private static Logger logger = LogManager.getLogger(DatabaseFunctions.class.getName());
 
     public static ResultSet retrieve(String query, Object[] params)
     {
@@ -18,7 +21,7 @@ public class DatabaseFunctions {
 
             for(int i = 0; i < params.length; i++)
             {
-                stmt.setObject(i, params[i]);
+                stmt.setObject(i + 1, params[i]);
             }
 
 
@@ -41,7 +44,7 @@ public class DatabaseFunctions {
 
             for(int i = 0; i < params.length; i++)
             {
-                stmt.setObject(i, params[i]);
+                stmt.setObject(i + 1, params[i]);
             }
 
 
