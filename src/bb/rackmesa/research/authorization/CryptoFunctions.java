@@ -5,11 +5,15 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.SecretKeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
+import java.util.UUID;
 
 /**
  * Created by Dan on 3/11/2016.
  */
+// https://gist.github.com/jtan189/3804290
 public class CryptoFunctions {
+
+    static SecureRandom rand = new SecureRandom();
 
     public static String convertByteToHex(byte data[])
     {
@@ -30,7 +34,7 @@ public class CryptoFunctions {
         }
         catch (NoSuchAlgorithmException ex)
         {
-            System.out.println(ex.getMessage());
+            System.err.println(ex.getMessage());
             return "ERROR No such algorithm";
         }
     }
@@ -38,8 +42,6 @@ public class CryptoFunctions {
 
     public static byte[] generateSalt(int numChars)
     {
-        SecureRandom rand = new SecureRandom();
-
         byte[] salt = new byte[numChars];
         rand.nextBytes(salt);
 
@@ -47,12 +49,26 @@ public class CryptoFunctions {
     }
 
 
-    private static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int bytes)
+    public static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int bytes)
             throws NoSuchAlgorithmException, InvalidKeySpecException
     {
         PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, bytes * 8);
         SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithSHA512");
         return skf.generateSecret(spec).getEncoded();
+    }
+
+
+    public static String generateUUID()
+    {
+        return UUID.randomUUID().toString();
+    }
+
+    public static boolean slowEquals(byte[] a, byte[] b)
+    {
+        int diff = a.length ^ b.length;
+        for(int i = 0; i < a.length && i < b.length; i++)
+            diff |= a[i] ^ b[i];
+        return diff == 0;
     }
 
 }
