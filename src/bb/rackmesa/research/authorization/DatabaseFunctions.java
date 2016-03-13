@@ -58,4 +58,20 @@ public class DatabaseFunctions {
         }
     }
 
+    public static String getSecret(String user, String service)
+    {
+        ResultSet rs = retrieve("SELECT token FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) derived JOIN Services s ON derived.service_id = s.service_id WHERE username = ? AND service_name = ?;", new Object[] {user, service});
+
+        try {
+            return rs.getString(0);
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+            return null;
+        }
+    }
+
+
+
 }
