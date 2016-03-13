@@ -7,8 +7,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.UUID;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by Dan on 3/11/2016.
@@ -17,7 +17,7 @@ import org.apache.logging.log4j.LogManager;
 public class CryptoFunctions {
 
     static SecureRandom rand = new SecureRandom();
-    private static Logger logger = LogManager.getLogger(CryptoFunctions.class.getName());
+    private static org.slf4j.Logger logger = LoggerFactory.getLogger(CryptoFunctions.class);
 
     public static String convertByteToHex(byte data[])
     {
@@ -74,6 +74,11 @@ public class CryptoFunctions {
         for(int i = 0; i < a.length && i < b.length; i++)
             diff |= a[i] ^ b[i];
         return diff == 0;
+    }
+
+    private static void TestLogging()
+    {
+        logger.warn("BIG BOIS");
     }
 
 }

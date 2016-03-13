@@ -1,16 +1,16 @@
 package bb.rackmesa.research.authorization;
 
 import java.sql.*;
-import java.util.Objects;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * Created by Dan on 3/12/2016.
  */
 public class DatabaseFunctions {
 
-    private static Logger logger = LogManager.getLogger(DatabaseFunctions.class.getName());
+    private static Logger logger = LoggerFactory.getLogger(DatabaseFunctions.class);
 
     public static ResultSet retrieve(String query, Object[] params)
     {

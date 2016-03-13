@@ -1,14 +1,14 @@
 package bb.rackmesa.research.authorization;
 
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by root on 3/12/16.
  */
 public class Configuration {
 
-    private static Logger logger = LogManager.getLogger(CryptoFunctions.class.getName());
+    private static org.slf4j.Logger logger = LoggerFactory.getLogger(Configuration.class);
 
     private String dbConnectionString;
     private static Configuration instance;
