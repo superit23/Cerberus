@@ -7,6 +7,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 import java.util.UUID;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 /**
  * Created by Dan on 3/11/2016.
  */
@@ -14,6 +17,7 @@ import java.util.UUID;
 public class CryptoFunctions {
 
     static SecureRandom rand = new SecureRandom();
+    private static Logger logger = LogManager.getLogger(CryptoFunctions.class.getName());
 
     public static String convertByteToHex(byte data[])
     {
@@ -34,7 +38,8 @@ public class CryptoFunctions {
         }
         catch (NoSuchAlgorithmException ex)
         {
-            System.err.println(ex.getMessage());
+            //System.err.println(ex.getMessage());
+            logger.error(ex.getMessage());
             return "ERROR No such algorithm";
         }
     }

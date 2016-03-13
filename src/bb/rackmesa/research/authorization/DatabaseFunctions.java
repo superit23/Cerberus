@@ -10,13 +10,12 @@ import org.apache.logging.log4j.LogManager;
  */
 public class DatabaseFunctions {
 
-    private static String connString = "";
     private static Logger logger = LogManager.getLogger(DatabaseFunctions.class.getName());
 
     public static ResultSet retrieve(String query, Object[] params)
     {
         try {
-            Connection conn = DriverManager.getConnection(connString);
+            Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
             PreparedStatement stmt = conn.prepareStatement(query);
 
             for(int i = 0; i < params.length; i++)
@@ -31,7 +30,8 @@ public class DatabaseFunctions {
         }
         catch (SQLException ex)
         {
-            System.err.println(ex.getMessage());
+            //System.err.println(ex.getMessage());
+            logger.error(ex.getMessage());
             return null;
         }
     }
@@ -39,7 +39,7 @@ public class DatabaseFunctions {
     public static void execute(String query, Object[] params)
     {
         try {
-            Connection conn = DriverManager.getConnection(connString);
+            Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
             PreparedStatement stmt = conn.prepareStatement(query);
 
             for(int i = 0; i < params.length; i++)
@@ -53,7 +53,8 @@ public class DatabaseFunctions {
         }
         catch (SQLException ex)
         {
-            System.err.println(ex.getMessage());
+            //System.err.println(ex.getMessage());
+            logger.error(ex.getMessage());
         }
     }
 
