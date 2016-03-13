@@ -29,6 +29,9 @@ public class Configuration {
 
     public static Configuration getInstance()
     {
+        if(Configuration.instance == null)
+            new Configuration();
+
         return instance;
     }
 

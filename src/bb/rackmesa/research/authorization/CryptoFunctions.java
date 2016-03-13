@@ -57,9 +57,22 @@ public class CryptoFunctions {
     public static byte[] pbkdf2(char[] password, byte[] salt, int iterations, int bytes)
             throws NoSuchAlgorithmException, InvalidKeySpecException
     {
-        PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, bytes * 8);
-        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithSHA512");
-        return skf.generateSecret(spec).getEncoded();
+        try {
+            PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, bytes * 8);
+            SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+            return skf.generateSecret(spec).getEncoded();
+        }
+        catch (NoSuchAlgorithmException ex)
+        {
+            logger.error(ex.getMessage());
+            return null;
+        }
+        catch (InvalidKeySpecException ex)
+        {
+            logger.error(ex.getMessage());
+            return null;
+        }
+
     }
 
 
