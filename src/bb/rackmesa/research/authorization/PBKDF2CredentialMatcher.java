@@ -1,0 +1,34 @@
+package bb.rackmesa.research.authorization;
+
+import org.apache.shiro.authc.AuthenticationInfo;
+import org.apache.shiro.authc.AuthenticationToken;
+import org.apache.shiro.authc.UsernamePasswordToken;
+import org.apache.shiro.authc.credential.CredentialsMatcher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Created by Dan on 3/18/2016.
+ */
+public class PBKDF2CredentialMatcher implements CredentialsMatcher {
+
+    private static Logger logger = LoggerFactory.getLogger(PBKDF2CredentialMatcher.class);
+
+    @Override
+    public boolean doCredentialsMatch(AuthenticationToken authenticationToken, AuthenticationInfo authenticationInfo) {
+        UsernamePasswordToken token = (UsernamePasswordToken)authenticationToken;
+        boolean uNamesMatch = token.getUsername() == authenticationInfo.getPrincipals().getPrimaryPrincipal();
+        byte[] derived = null;
+        try {
+            derived = CryptoFunctions.pbkdf2(token.getPassword(), Configuration.getInstance().getapplicationSalt(), Configuration.getInstance().getpbkdf2Iterations(), Configuration.getInstance().getpbkdf2NumBytes());
+        }
+        catch (Exception ex)
+        {
+            logger.error(ex.getMessage());
+
+        }
+
+        boolean passesMatch = derived == authenticationInfo.getCredentials();
+        return passesMatch && uNamesMatch;
+    }
+}

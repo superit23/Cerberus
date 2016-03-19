@@ -13,6 +13,10 @@ public class Configuration {
     private String dbConnectionString;
     private static Configuration instance;
 
+    private int pbkdf2Iterations;
+    private int pbkdf2NumBytes;
+    private byte[] applicationSalt;
+
 
     public Configuration()
     {
@@ -44,5 +48,36 @@ public class Configuration {
     {
         dbConnectionString = value;
     }
+
+    public int getpbkdf2Iterations()
+    {
+        return pbkdf2Iterations;
+    }
+
+    public void setpbkdf2Iterations(int value)
+    {
+        pbkdf2Iterations = value;
+    }
+
+    public int getpbkdf2NumBytes()
+    {
+        return pbkdf2NumBytes;
+    }
+
+    public void setpbkdf2NumBytes(int value)
+    {
+        pbkdf2NumBytes = value;
+    }
+
+    public byte[] getapplicationSalt()
+    {
+        return applicationSalt;
+    }
+
+    public void setapplicationSalt(byte[] value)
+    {
+        applicationSalt = value;
+    }
+
 
 }
