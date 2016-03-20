@@ -1,9 +1,14 @@
 package bb.rackmesa.research.authorization;
 
 import java.sql.*;
-import java.util.Dictionary;
-import java.util.Map;
-import java.util.HashMap;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+import java.util.Date;
+
+import org.apache.shiro.authc.SimpleAccount;
+import org.apache.shiro.authz.Permission;
+import org.apache.shiro.authz.permission.WildcardPermission;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,14 +81,16 @@ public class DatabaseFunctions {
         }
     }
 
-    public static Map<String, String> getPermissionsForUserByService(String service, String username)
+    public static List<Permission> getPermissionsForUserByService(String service, String username)
     {
         ResultSet rs = retrieve("SELECT key, value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permissions_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
-        HashMap<String,String> permissions = new HashMap<String, String>();
+        //HashMap<String,String> permissions = new HashMap<String, String>();
+        List<Permission> permissions = new ArrayList<>();
+
         try {
 
             while (rs.next()){
-                permissions.put(rs.getString(0), rs.getString(1));
+                permissions.add(new WildcardPermission(rs.getString(0) + ":" + rs.getString(1)));
             }
 
             return permissions;
@@ -96,7 +103,41 @@ public class DatabaseFunctions {
 
     }
 
+    public static SimpleAccount getUserAuthFromDB(String service, String username)
+    {
+        String token = null;
+        Date tokenExpiration = null;
 
+        try {
+            ResultSet rs = retrieve("SELECT token, token_expiration can_recreate, is_open_policy FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) d1 JOIN Services s ON d1.service_id = s.service_id  WHERE username = ? AND service_name = ?;", new Object[]{username, service});
+            token = rs.getString(0);
+            tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(1));
+
+            if(tokenExpiration.before(new Date()))
+            {
+
+            }
+
+            SimpleAccount account = new SimpleAccount(username, token, service);
+            account.addObjectPermissions(getPermissionsForUserByService(service,username));
+            account.addObjectPermission(new WildcardPermission("canRecreate:" + rs.getString(2)));
+            account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(3)));
+
+            return account;
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+        }
+        catch (ParseException ex)
+        {
+            logger.error(ex.getMessage());
+        }
+
+
+        return  null;
+
+    }
 
 
 

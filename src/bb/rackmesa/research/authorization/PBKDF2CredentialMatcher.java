@@ -4,6 +4,7 @@ import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.UsernamePasswordToken;
 import org.apache.shiro.authc.credential.CredentialsMatcher;
+import org.apache.shiro.codec.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +19,9 @@ public class PBKDF2CredentialMatcher implements CredentialsMatcher {
     public boolean doCredentialsMatch(AuthenticationToken authenticationToken, AuthenticationInfo authenticationInfo) {
         UsernamePasswordToken token = (UsernamePasswordToken)authenticationToken;
         boolean uNamesMatch = token.getUsername() == authenticationInfo.getPrincipals().getPrimaryPrincipal();
-        byte[] derived = null;
+        String derived = null;
         try {
-            derived = CryptoFunctions.pbkdf2(token.getPassword(), Configuration.getInstance().getapplicationSalt(), Configuration.getInstance().getpbkdf2Iterations(), Configuration.getInstance().getpbkdf2NumBytes());
+            derived = Base64.encodeToString(CryptoFunctions.pbkdf2(token.getPassword(), Configuration.getInstance().getapplicationSalt(), Configuration.getInstance().getpbkdf2Iterations(), Configuration.getInstance().getpbkdf2NumBytes()));
         }
         catch (Exception ex)
         {
