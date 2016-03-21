@@ -115,7 +115,7 @@ public class DatabaseFunctions {
 
             if(tokenExpiration.before(new Date()))
             {
-
+                return null;
             }
 
             SimpleAccount account = new SimpleAccount(username, token, service);
