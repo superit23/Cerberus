@@ -33,7 +33,7 @@ public class DatabaseFunctions {
             }
 
 
-            ResultSet rs = stmt.executeQuery(stmt.toString());
+            ResultSet rs = stmt.executeQuery();
 
             return rs;
         }
@@ -83,14 +83,14 @@ public class DatabaseFunctions {
 
     public static List<Permission> getPermissionsForUserByService(String service, String username)
     {
-        ResultSet rs = retrieve("SELECT key, value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permissions_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
+        ResultSet rs = retrieve("SELECT key, value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
         //HashMap<String,String> permissions = new HashMap<String, String>();
         List<Permission> permissions = new ArrayList<>();
 
         try {
 
             while (rs.next()){
-                permissions.add(new WildcardPermission(rs.getString(0) + ":" + rs.getString(1)));
+                permissions.add(new WildcardPermission(rs.getString(1) + ":" + rs.getString(2)));
             }
 
             return permissions;
@@ -109,9 +109,10 @@ public class DatabaseFunctions {
         Date tokenExpiration = null;
 
         try {
-            ResultSet rs = retrieve("SELECT token, token_expiration can_recreate, is_open_policy FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) d1 JOIN Services s ON d1.service_id = s.service_id  WHERE username = ? AND service_name = ?;", new Object[]{username, service});
-            token = rs.getString(0);
-            tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(1));
+            ResultSet rs = retrieve("SELECT token, token_expiration, can_recreate, is_open_policy FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) d1 JOIN Services s ON d1.service_id = s.service_id  WHERE username = ? AND service_name = ?;", new Object[]{username, service});
+            rs.next();
+            token = rs.getString(1);
+            tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(2));
 
             if(tokenExpiration.before(new Date()))
             {
@@ -120,8 +121,8 @@ public class DatabaseFunctions {
 
             SimpleAccount account = new SimpleAccount(username, token, service);
             account.addObjectPermissions(getPermissionsForUserByService(service,username));
-            account.addObjectPermission(new WildcardPermission("canRecreate:" + rs.getString(2)));
-            account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(3)));
+            account.addObjectPermission(new WildcardPermission("canRecreate:" + rs.getString(3)));
+            account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(4)));
 
             return account;
         }
