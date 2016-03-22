@@ -29,7 +29,7 @@ public class PBKDF2CredentialMatcher implements CredentialsMatcher {
 
         }
 
-        boolean passesMatch = derived == authenticationInfo.getCredentials();
+        boolean passesMatch = derived.equals(authenticationInfo.getCredentials());
         return passesMatch && uNamesMatch;
     }
 }

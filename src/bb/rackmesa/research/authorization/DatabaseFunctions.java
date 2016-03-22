@@ -116,6 +116,7 @@ public class DatabaseFunctions {
 
             if(tokenExpiration.before(new Date()))
             {
+                logger.warn("User '" + username + "' for service '" + service + "' expired. Logon failed.");
                 return null;
             }
 
