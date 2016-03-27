@@ -21,7 +21,7 @@ public class PBKDF2CredentialMatcher implements CredentialsMatcher {
         boolean uNamesMatch = token.getUsername() == authenticationInfo.getPrincipals().getPrimaryPrincipal();
         String derived = null;
         try {
-            derived = Base64.encodeToString(CryptoFunctions.pbkdf2(token.getPassword(), Configuration.getInstance().getapplicationSalt(), Configuration.getInstance().getpbkdf2Iterations(), Configuration.getInstance().getpbkdf2NumBytes()));
+            derived = Base64.encodeToString(CryptoFunctions.pbkdf2(token.getPassword(), Configuration.getInstance().getApplicationSalt(), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
         }
         catch (Exception ex)
         {
@@ -29,7 +29,7 @@ public class PBKDF2CredentialMatcher implements CredentialsMatcher {
 
         }
 
-        boolean passesMatch = derived.equals(authenticationInfo.getCredentials());
+        boolean passesMatch = CryptoFunctions.slowEquals(derived.getBytes(), ((String)authenticationInfo.getCredentials()).getBytes());
         return passesMatch && uNamesMatch;
     }
 }

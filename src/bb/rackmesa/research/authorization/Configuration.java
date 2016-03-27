@@ -16,6 +16,7 @@ public class Configuration {
     private int pbkdf2Iterations;
     private int pbkdf2NumBytes;
     private byte[] applicationSalt;
+    private long artificialWait;
 
 
     public Configuration()
@@ -49,34 +50,44 @@ public class Configuration {
         dbConnectionString = value;
     }
 
-    public int getpbkdf2Iterations()
+    public int getPBDKF2Iterations()
     {
         return pbkdf2Iterations;
     }
 
-    public void setpbkdf2Iterations(int value)
+    public void setPBDKF2Iterations(int value)
     {
         pbkdf2Iterations = value;
     }
 
-    public int getpbkdf2NumBytes()
+    public int getPBDKF2NumBytes()
     {
         return pbkdf2NumBytes;
     }
 
-    public void setpbkdf2NumBytes(int value)
+    public void setPBDKF2NumBytes(int value)
     {
         pbkdf2NumBytes = value;
     }
 
-    public byte[] getapplicationSalt()
+    public byte[] getApplicationSalt()
     {
         return applicationSalt;
     }
 
-    public void setapplicationSalt(byte[] value)
+    public void setApplicationSalt(byte[] value)
     {
         applicationSalt = value;
+    }
+
+    public long getArtificialWait()
+    {
+        return artificialWait;
+    }
+
+    public void setArtificialWait(long value)
+    {
+        artificialWait = value;
     }
 
 
