@@ -18,4 +18,10 @@ public class CerbAuthToken extends UsernamePasswordToken {
     {
         this.service = service;
     }
+
+    public CerbAuthToken(String service, String user, String pass)
+    {
+        super(user, pass);
+        setService(service);
+    }
 }
