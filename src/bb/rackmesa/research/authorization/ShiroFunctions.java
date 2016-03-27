@@ -22,13 +22,14 @@ public class ShiroFunctions {
 
     public ShiroFunctions()
     {
+        ServiceMappedDBRealm realm = new ServiceMappedDBRealm();
         SecurityUtils.setSecurityManager(secMan);
-
+        secMan.setRealm(realm);
     }
 
     public static JdbcRealm realm = new JdbcRealm();
 
-    public static SecurityManager secMan = new DefaultSecurityManager();
+    public static DefaultSecurityManager secMan = new DefaultSecurityManager();
 
     public static Subject getSubject(String service, String username)
     {

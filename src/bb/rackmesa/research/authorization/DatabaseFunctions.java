@@ -6,6 +6,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
 
+import org.apache.shiro.authc.AuthenticationException;
+import org.apache.shiro.authc.ExpiredCredentialsException;
 import org.apache.shiro.authc.SimpleAccount;
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.authz.permission.WildcardPermission;
@@ -116,8 +118,10 @@ public class DatabaseFunctions {
 
             if(tokenExpiration.before(new Date()))
             {
-                logger.warn("User '" + username + "' for service '" + service + "' expired. Logon failed.");
-                return null;
+                String exceptionString = "User '" + username + "' for service '" + service + "' expired. Logon failed.";
+                logger.warn(exceptionString);
+                throw new ExpiredCredentialsException(exceptionString);
+                //return null;
             }
 
             SimpleAccount account = new SimpleAccount(username, token, service);
