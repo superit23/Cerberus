@@ -18,6 +18,8 @@ public class Configuration {
     private byte[] applicationSalt;
     private long artificialWait;
 
+    private String cerberusServer;
+
 
     public Configuration()
     {
@@ -88,6 +90,16 @@ public class Configuration {
     public void setArtificialWait(long value)
     {
         artificialWait = value;
+    }
+
+    public String getCerberusServer()
+    {
+        return cerberusServer;
+    }
+
+    public void setCerberusServer(String value)
+    {
+        cerberusServer = value;
     }
 
 
