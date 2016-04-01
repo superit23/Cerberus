@@ -2,6 +2,7 @@ package bb.rackmesa.research.authorization;
 
 import org.apache.shiro.authc.SimpleAccount;
 import org.apache.shiro.authz.Permission;
+import org.apache.shiro.subject.PrincipalCollection;
 
 import java.util.Set;
 
@@ -11,18 +12,32 @@ import java.util.Set;
 public class CerbAccount extends SimpleAccount {
 
     private String service;
+    private int userID;
+
 
     public String getService()
     {
         return service;
     }
 
-    public void setService(String service)
+    public void setService(String value)
     {
-        this.service = service;
+        service = value;
     }
 
-    public CerbAccount(String service, Object principal, Object credential, String realmName, Set<String> roles, Set<Permission> permissions)
+    public int getUserID()
+    {
+        return userID;
+    }
+
+    public void setUserID(int value)
+    {
+        userID = value;
+    }
+
+
+
+    public CerbAccount(String service, PrincipalCollection principal, Object credential, String realmName, Set<String> roles, Set<Permission> permissions)
     {
         super(principal, credential, realmName, roles, permissions);
         this.service = service;

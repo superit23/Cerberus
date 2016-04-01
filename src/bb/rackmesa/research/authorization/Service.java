@@ -12,9 +12,11 @@ import java.util.List;
 public class Service {
     private static Logger logger = LoggerFactory.getLogger(DatabaseFunctions.class);
 
+    private int serviceID;
     private String name;
     private String owningUser;
     private List<String> users;
+    private boolean isOpenPolicy;
 
     public void setName(String value)
     {
@@ -44,6 +46,26 @@ public class Service {
     public List<String> getUsers()
     {
         return users;
+    }
+
+    public void setServiceID(int value)
+    {
+        serviceID = value;
+    }
+
+    public int getServiceID()
+    {
+        return serviceID;
+    }
+
+    public void setIsOpenPolicy(boolean value)
+    {
+        isOpenPolicy = value;
+    }
+
+    public boolean getIsOpenPolicy()
+    {
+        return isOpenPolicy;
     }
 
 }
