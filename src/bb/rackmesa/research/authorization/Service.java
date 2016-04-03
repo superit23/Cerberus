@@ -14,9 +14,11 @@ public class Service {
 
     private int serviceID;
     private String name;
-    private String owningUser;
-    private List<String> users;
+    private CerbAccount owningUser;
+    private List<CerbAccount> users;
     private boolean isOpenPolicy;
+    private List<CerbRole> roles;
+    private List<CerbPermission> permissions;
 
     public void setName(String value)
     {
@@ -28,22 +30,22 @@ public class Service {
         return name;
     }
 
-    public void setOwningUser(String value)
+    public void setOwningUser(CerbAccount value)
     {
         owningUser = value;
     }
 
-    public String getOwningUser()
+    public CerbAccount getOwningUser()
     {
         return owningUser;
     }
 
-    public void setUsers(List<String> value)
+    public void setUsers(List<CerbAccount> value)
     {
         users = value;
     }
 
-    public List<String> getUsers()
+    public List<CerbAccount> getUsers()
     {
         return users;
     }
@@ -66,6 +68,26 @@ public class Service {
     public boolean getIsOpenPolicy()
     {
         return isOpenPolicy;
+    }
+
+    public void setRoles(List<CerbRole> value)
+    {
+        roles = value;
+    }
+
+    public List<CerbRole> getRoles()
+    {
+        return roles;
+    }
+
+    public void setPermissions(List<CerbPermission> value)
+    {
+        permissions = value;
+    }
+
+    public List<CerbPermission> getPermissions()
+    {
+        return permissions;
     }
 
 }
