@@ -1,5 +1,7 @@
 package bb.rackmesa.research.authorization;
 
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -15,6 +17,8 @@ import org.apache.shiro.authc.SimpleAccount;
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.authz.permission.WildcardPermission;
 
+import org.apache.shiro.codec.*;
+import org.apache.shiro.crypto.CryptoException;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.SimplePrincipalCollection;
 import org.slf4j.Logger;
@@ -28,11 +32,21 @@ public class DatabaseFunctions {
 
     private static Logger logger = LoggerFactory.getLogger(DatabaseFunctions.class);
 
-    public static ResultSet retrieve(String query, Object[] params)
+    public static ResultSet retrieve(String query, Object[] params, int magic_constant)
     {
         try {
             Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
-            PreparedStatement stmt = conn.prepareStatement(query);
+            PreparedStatement stmt = null;
+
+            if(magic_constant != -1)
+            {
+                conn.prepareStatement(query, magic_constant);
+            }
+            else
+            {
+                conn.prepareStatement(query);
+            }
+
 
             for(int i = 0; i < params.length; i++)
             {
@@ -43,6 +57,43 @@ public class DatabaseFunctions {
             ResultSet rs = stmt.executeQuery();
 
             return rs;
+        }
+        catch (SQLException ex)
+        {
+            //System.err.println(ex.getMessage());
+            logger.error(ex.getMessage());
+            return null;
+        }
+    }
+
+    public static ResultSet retrieve(String query, Object[] params)
+    {
+        return retrieve(query, params, -1);
+    }
+
+    public static ResultSet insert(String query, Object[] params)
+    {
+        try {
+            Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            PreparedStatement stmt = null;
+            conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+
+
+
+            for(int i = 0; i < params.length; i++)
+            {
+                stmt.setObject(i + 1, params[i]);
+            }
+
+
+            int affectedRows = stmt.executeUpdate();
+
+            if(affectedRows == 0)
+            {
+                throw new SQLException("Insert failed: No rows generated.");
+            }
+
+            return stmt.getGeneratedKeys();
         }
         catch (SQLException ex)
         {
@@ -64,8 +115,14 @@ public class DatabaseFunctions {
             }
 
 
-            stmt.execute(stmt.toString());
+            //stmt.execute();
 
+            int affectedRows = stmt.executeUpdate();
+
+            if(affectedRows == 0)
+            {
+                throw new SQLException("Execute failed: No rows affected.");
+            }
         }
         catch (SQLException ex)
         {
@@ -212,34 +269,115 @@ public class DatabaseFunctions {
         }
     }
 
-    public static void createPermission(Service service, String value, String description)
+    public static CerbPermission createPermission(Service service, String value, String description)
     {
-        execute("INSERT INTO Permissions VALUES(DEFAULT,?,?,?);", new Object[] {service.getServiceID(), value, description});
+        ResultSet results = insert("INSERT INTO Permissions VALUES(DEFAULT,?,?,?);", new Object[] {service.getServiceID(), value, description});
+
+        CerbPermission permission = new CerbPermission(value);
+        permission.setDescription(description);
+
+        try {
+            if (results.next()) {
+                permission.setPermissionID(results.getInt(1));
+            }
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+        }
+
+        return permission;
+
     }
 
     public static void createRole(Service service, String value, String description)
     {
-        execute("INSERT INTO Roles VALUES(DEFAULT,?,?,?);", new Object[] {service.getServiceID(), value, description});
+        insert("INSERT INTO Roles VALUES(DEFAULT,?,?,?);", new Object[] {service.getServiceID(), value, description});
+
     }
 
-    public static String createUser(Service service, String username, Date tokenExpiration )
+    public static CerbAccount createUser(Service service, String username, Date tokenExpiration )
     {
         String uuid = CryptoFunctions.generateUUID();
+        String token = null;
 
-        execute("INSERT INTO Users VALUES(DEFAULT,?,?,?,?);", new Object[] {service.getServiceID(), username, uuid, tokenExpiration});
+        try {
+            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(uuid.toCharArray(), Configuration.getInstance().getApplicationSalt(), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+        }
+        catch (NoSuchAlgorithmException ex)
+        {
+            logger.error(ex.getMessage());
+        }
+        catch (InvalidKeySpecException ex)
+        {
+            logger.error(ex.getMessage());
+        }
 
-        return uuid;
+        if(token == null)
+        {
+            throw new CryptoException("Token could not be created!");
+        }
+
+        ResultSet results = insert("INSERT INTO Users VALUES(DEFAULT,?,?,?,?);", new Object[] {service.getServiceID(), username, token, tokenExpiration});
+
+        CerbAccount cerbUser = new CerbAccount(service.getName(), username, uuid, "Cerberus", new HashSet<String>(), new HashSet<Permission>());
+
+        try {
+            if (results.next()) {
+                cerbUser.setUserID(results.getInt(1));
+            }
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+        }
+
+        return cerbUser;
     }
 
-    public static void createService(String name, CerbAccount owningUser, boolean isOpenPolicy)
+    public static Service createService(String name, CerbAccount owningUser, boolean isOpenPolicy)
     {
-        execute("INSERT INTO Services VALUES(DEFAULT,?,?,?)", new Object[] {name, owningUser.getUserID(), isOpenPolicy});
+        ResultSet results = insert("INSERT INTO Services VALUES(DEFAULT,?,?,?);", new Object[] {name, owningUser.getUserID(), isOpenPolicy});
+
+        Service service = new Service();
+
+        try {
+            if (results.next()) {
+                service.setServiceID(results.getInt(1));
+            }
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+        }
+
+        return service;
+
     }
 
-    // TO-DO
-    public static void associatePermissionWithUser(CerbAccount user, String permission)
+    public static void associatePermissionWithUser(CerbAccount user, CerbPermission permission)
     {
-        execute("INSERT INTO Permissions VALUES(DEFAULT,)", null);
+        execute("INSERT INTO Users_Permissions VALUES(DEFAULT,?,?);", new Object[] {user.getUserID(), permission.getPermissionID()});
+    }
+
+    public static void updateUser(CerbAccount user)
+    {
+
+    }
+
+    public static void updateService(Service service)
+    {
+
+    }
+
+    public static void updatePermission(CerbPermission permission)
+    {
+
+    }
+
+    public static void updateRole(Service service, String value, String description)
+    {
+        execute("UPDATE Roles SET;", new Object[] {});
     }
 
 }
