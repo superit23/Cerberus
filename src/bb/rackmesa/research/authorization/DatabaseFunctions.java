@@ -296,7 +296,7 @@ public class DatabaseFunctions {
 
     }
 
-    public static CerbAccount createUser(Service service, String username, Date tokenExpiration )
+    public static CerbAccount createUser(Service service, String username, Date tokenExpiration)
     {
         String uuid = CryptoFunctions.generateUUID();
         String token = null;
@@ -353,6 +353,77 @@ public class DatabaseFunctions {
 
         return service;
 
+    }
+
+    public static Service retrieveService(String name)
+    {
+        Service service = new Service();
+
+        ResultSet servResults = retrieve("SELECT service_id, is_open_policy, username FROM Services s JOIN Users u ON s.owning_user = u.user_id WHERE name = ?;", new Object[] { name });
+
+        int serviceID = 0;
+        CerbAccount owningUser = null;
+        boolean isOpenPolicy = false;
+        List<CerbPermission> permissions = null;
+
+        try {
+            servResults.next();
+            serviceID = servResults.getInt(1);
+            isOpenPolicy = servResults.getBoolean(2);
+            owningUser = getUserAuthFromDB(name, servResults.getString(3));
+            permissions = retrievePermissionsForService(name);
+
+        }
+        catch (NullPointerException ex)
+        {
+            logger.warn("Service " + service + " does not exist.");
+            return null;
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+            return null;
+        }
+
+        service.setServiceID(serviceID);
+        service.setIsOpenPolicy(isOpenPolicy);
+        service.setOwningUser(owningUser);
+        service.setName(name);
+        service.setPermissions(permissions);
+
+        return service;
+    }
+
+    public static List<CerbPermission> retrievePermissionsForService(String name)
+    {
+        ResultSet permResults = retrieve("SELECT permission_id, value, description FROM Permissions p JOIN Services s ON p.service_id = s.service_id WHERE s.service_name = ?;", new Object[] { name });
+
+        List<CerbPermission> permissions = new ArrayList<>();
+
+        try
+        {
+
+            while(permResults.next()) {
+
+                int perm_id = permResults.getInt(1);
+                String value = permResults.getString(2);
+                String description = permResults.getString(3);
+
+                CerbPermission permission = new CerbPermission(value, perm_id);
+                permission.setDescription(description);
+
+                permissions.add(permission);
+
+            }
+
+            return permissions;
+
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+            return null;
+        }
     }
 
     public static void associatePermissionWithUser(CerbAccount user, CerbPermission permission)
