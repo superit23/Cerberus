@@ -18,6 +18,7 @@ import org.apache.shiro.authz.Permission;
 import org.apache.shiro.authz.permission.WildcardPermission;
 
 import org.apache.shiro.codec.*;
+import org.apache.shiro.codec.Base64;
 import org.apache.shiro.crypto.CryptoException;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.SimplePrincipalCollection;
@@ -193,9 +194,10 @@ public class DatabaseFunctions {
         String token = null;
         Date tokenExpiration = null;
         int user_id = 0;
+        byte[] salt = null;
 
         try {
-            ResultSet rs = retrieve("SELECT token, token_expiration, user_id FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) d1 JOIN Services s ON d1.service_id = s.service_id  WHERE username = ? AND service_name = ?;", new Object[]{username, service});
+            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, salt FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) d1 JOIN Services s ON d1.service_id = s.service_id  WHERE username = ? AND service_name = ?;", new Object[]{username, service});
 
             try {
                 rs.next();
@@ -210,6 +212,7 @@ public class DatabaseFunctions {
             token = rs.getString(1);
             tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(2));
             user_id = rs.getInt(3);
+            salt = Base64.decode(rs.getString(1));
 
             if(tokenExpiration.before(new Date()))
             {
@@ -228,7 +231,7 @@ public class DatabaseFunctions {
             sPCollection.add(username, "Cerberus");
             sPCollection.add(user_id, "Cerberus");
 
-            CerbAccount account = new CerbAccount(service, sPCollection, token, "Cerberus", roles, permissions);
+            CerbAccount account = new CerbAccount(service, sPCollection, tokenExpiration, token, salt, "Cerberus", roles, permissions);
             account.setUserID(user_id);
             //account.addObjectPermission(new WildcardPermission("canRecreate:" + rs.getString(3)));
             //account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(4)));
@@ -296,13 +299,13 @@ public class DatabaseFunctions {
 
     }
 
-    public static CerbAccount createUser(Service service, String username, Date tokenExpiration)
+    public static CerbAccount createUser(Service service, String username, String password, Date tokenExpiration)
     {
-        String uuid = CryptoFunctions.generateUUID();
+        //String uuid = CryptoFunctions.generateUUID();
         String token = null;
 
         try {
-            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(uuid.toCharArray(), Configuration.getInstance().getApplicationSalt(), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), Configuration.getInstance().getApplicationSalt(), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
         }
         catch (NoSuchAlgorithmException ex)
         {
@@ -320,7 +323,7 @@ public class DatabaseFunctions {
 
         ResultSet results = insert("INSERT INTO Users VALUES(DEFAULT,?,?,?,?);", new Object[] {service.getServiceID(), username, token, tokenExpiration});
 
-        CerbAccount cerbUser = new CerbAccount(service.getName(), username, uuid, "Cerberus", new HashSet<String>(), new HashSet<Permission>());
+        CerbAccount cerbUser = new CerbAccount(service.getName(), username, tokenExpiration, token, CryptoFunctions.generateSalt(75), "Cerberus", new HashSet<String>(), new HashSet<Permission>());
 
         try {
             if (results.next()) {
@@ -433,22 +436,22 @@ public class DatabaseFunctions {
 
     public static void updateUser(CerbAccount user)
     {
-
+        execute("UPDATE SET Users username = ?, token = ?, token_expiration = ?, salt = ? WHERE user_id = ?;", new Object[] { user.getPrincipals().getPrimaryPrincipal(), user.getCredentials(), user.getTokenExpiration(), user.getUserID()});
     }
 
     public static void updateService(Service service)
     {
-
+        execute("UPDATE Services SET service_name  = ?, owning_user = ?, is_open_policy  = ? WHERE service_id = ?;", new Object[] {service.getName(), service.getOwningUser().getUserID(), service.getIsOpenPolicy(), service.getServiceID()});
     }
 
     public static void updatePermission(CerbPermission permission)
     {
-
+        execute("UPDATE Permissions SET value = ?, description = ? WHERE permission_id = ?;", new Object[] {permission.toString(), permission.getDescription(), permission.getPermissionID()});
     }
 
-    public static void updateRole(Service service, String value, String description)
+    public static void updateRole(CerbRole role)
     {
-        execute("UPDATE Roles SET;", new Object[] {});
+        execute("UPDATE Roles SET value = ?, description = ? WHERE role_id = ?;", new Object[] {role.getValue(), role.getDescription(), role.getRoleID()});
     }
 
 }
