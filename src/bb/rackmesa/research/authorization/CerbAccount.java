@@ -66,4 +66,12 @@ public class CerbAccount extends SimpleAccount {
         this.salt = salt;
         this.tokenExpiration = tokenExpiration;
     }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        CerbAccount other = (CerbAccount)o;
+
+        return other.getService() == this.getService() && other.getUserID() == this.getUserID();
+    }
 }

@@ -189,7 +189,7 @@ public class DatabaseFunctions {
         }
     }
 
-    public static CerbAccount getUserAuthFromDB(String service, String username)
+    public static CerbAccount retrieveUser(String service, String username)
     {
         String token = null;
         Date tokenExpiration = null;
@@ -264,12 +264,25 @@ public class DatabaseFunctions {
             account.setRoles(new HashSet<String>());
         }
 
-        CerbAccount dbAccount = getUserAuthFromDB(account.getService(), account.getPrincipals().getPrimaryPrincipal().toString());
+        CerbAccount dbAccount = retrieveUser(account.getService(), account.getPrincipals().getPrimaryPrincipal().toString());
 
-        if(dbAccount == null)
+        if(dbAccount != null)
         {
 
         }
+
+        Collection<Permission> currPerm = account.getObjectPermissions();
+
+        for (Permission perm :currPerm
+             ) {
+            if(!dbAccount.getObjectPermissions().contains(perm))
+            {
+                associatePermissionWithUser(account, (CerbPermission)perm);
+            }
+        }
+
+
+
     }
 
     public static CerbPermission createPermission(Service service, String value, String description)
@@ -373,7 +386,7 @@ public class DatabaseFunctions {
             servResults.next();
             serviceID = servResults.getInt(1);
             isOpenPolicy = servResults.getBoolean(2);
-            owningUser = getUserAuthFromDB(name, servResults.getString(3));
+            owningUser = retrieveUser(name, servResults.getString(3));
             permissions = retrievePermissionsForService(name);
 
         }
@@ -434,6 +447,21 @@ public class DatabaseFunctions {
         execute("INSERT INTO Users_Permissions VALUES(DEFAULT,?,?);", new Object[] {user.getUserID(), permission.getPermissionID()});
     }
 
+    public static void associateRoleWithUser(CerbAccount user, CerbRole role)
+    {
+        execute("INSERT INTO Users_Roles VALUES(DEFAULT,?,?);", new Object[] {user.getUserID(), role.getRoleID()});
+    }
+
+    public static void unassociatePermissionWithUser(CerbAccount user, CerbPermission permission)
+    {
+        execute("DELETE FROM Users_Permissions WHERE user_id = ? AND permission_id = ?;", new Object[] {user.getUserID(), permission.getPermissionID()});
+    }
+
+    public static void unassociateRoleWithUser(CerbAccount user, CerbRole role)
+    {
+        execute("DELETE FROM Users_Roles WHERE user_id = ? AND role_id = ?;", new Object[] {user.getUserID(), role.getRoleID()});
+    }
+
     public static void updateUser(CerbAccount user)
     {
         execute("UPDATE SET Users username = ?, token = ?, token_expiration = ?, salt = ? WHERE user_id = ?;", new Object[] { user.getPrincipals().getPrimaryPrincipal(), user.getCredentials(), user.getTokenExpiration(), user.getUserID()});
@@ -452,6 +480,26 @@ public class DatabaseFunctions {
     public static void updateRole(CerbRole role)
     {
         execute("UPDATE Roles SET value = ?, description = ? WHERE role_id = ?;", new Object[] {role.getValue(), role.getDescription(), role.getRoleID()});
+    }
+
+    public static void deleteUser(CerbAccount user)
+    {
+        execute("DELETE FROM Users WHERE user_id = ?;", new Object[] {user.getUserID()});
+    }
+
+    public static void deleteService(Service service)
+    {
+        execute("DELETE FROM Services WHERE service_id = ?;", new Object[] {service.getServiceID()});
+    }
+
+    public static void deleteRole(CerbRole role)
+    {
+        execute("DELETE FROM Roles WHERE role_id = ?;", new Object[] {role.getRoleID()});
+    }
+
+    public static void deletePermission(CerbPermission permission)
+    {
+        execute("DELETE FROM Permissions WHERE permission_id = ?;", new Object[] {permission.getPermissionID()});
     }
 
 }

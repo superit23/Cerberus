@@ -46,4 +46,11 @@ public class CerbRole {
         return roleID;
     }
 
+    @Override
+    public boolean equals(Object o)
+    {
+        CerbRole other = (CerbRole)o;
+
+        return other.getRoleID() == this.getRoleID() && other.getDescription() == this.getDescription() && other.getValue() == this.getValue();
+    }
 }

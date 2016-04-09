@@ -9,6 +9,8 @@ public class CerbPermission extends WildcardPermission {
 
     private int permissionID;
 
+    private String wildcardString;
+
     public void setPermissionID(int value)
     {
         permissionID = value;
@@ -31,9 +33,22 @@ public class CerbPermission extends WildcardPermission {
         return description;
     }
 
+    public void setWildcardString(String value)
+    {
+        this.setParts(wildcardString);
+        wildcardString = value;
+    }
+
+    public String getWildcardString()
+    {
+        return wildcardString;
+    }
+
+
     public CerbPermission(String wildcardString, int permissionID)
     {
         super(wildcardString);
+        setWildcardString(wildcardString);
 
         setPermissionID(permissionID);
     }
@@ -43,5 +58,13 @@ public class CerbPermission extends WildcardPermission {
         super(wildcardString);
 
         setPermissionID(-1);
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        CerbPermission other = (CerbPermission)o;
+
+        return other.getPermissionID() == this.getPermissionID() && other.getDescription() == this.getDescription() && other.getWildcardString() == this.getWildcardString();
     }
 }
