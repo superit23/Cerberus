@@ -41,11 +41,11 @@ public class DatabaseFunctions {
 
             if(magic_constant != -1)
             {
-                conn.prepareStatement(query, magic_constant);
+                stmt = conn.prepareStatement(query, magic_constant);
             }
             else
             {
-                conn.prepareStatement(query);
+                stmt = conn.prepareStatement(query);
             }
 
 
@@ -148,7 +148,7 @@ public class DatabaseFunctions {
 
     public static HashSet<Permission> getPermissionsForUserByService(String service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
+        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id AND d1.service_id = p.service_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
         //HashMap<String,String> permissions = new HashMap<String, String>();
         HashSet<Permission> permissions = new HashSet<>();
 
@@ -197,7 +197,7 @@ public class DatabaseFunctions {
         byte[] salt = null;
 
         try {
-            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, salt FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) d1 JOIN Services s ON d1.service_id = s.service_id  WHERE username = ? AND service_name = ?;", new Object[]{username, service});
+            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, salt FROM (Users u JOIN Services s ON u.service_id = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service});
 
             try {
                 rs.next();
@@ -271,13 +271,20 @@ public class DatabaseFunctions {
 
         }
 
-        Collection<Permission> currPerm = account.getObjectPermissions();
+        Collection<Permission> currPerms = account.getObjectPermissions();
 
-        for (Permission perm :currPerm
+        // If the user doesn't have the permission in the database, update the database with the new ones
+        for (Permission perm :currPerms
              ) {
-            if(!dbAccount.getObjectPermissions().contains(perm))
+
+            CerbPermission castPerm = (CerbPermission)perm;
+
+            for(Permission oldPerm : dbAccount.getObjectPermissions())
             {
-                associatePermissionWithUser(account, (CerbPermission)perm);
+                if(!(castPerm.getPermissionID() == ((CerbPermission)oldPerm).getPermissionID()))
+                {
+                    associatePermissionWithUser(account, castPerm);
+                }
             }
         }
 

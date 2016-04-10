@@ -30,7 +30,7 @@ public class ServiceMappedDBRealm extends JdbcRealm {
             logger.error(ex.getMessage());
         }
 
-        SimpleAccount accnt = DatabaseFunctions.getUserAuthFromDB(cToken.getService(), (String)cToken.getPrincipal());
+        CerbAccount accnt = DatabaseFunctions.retrieveUser(cToken.getService(), (String)cToken.getPrincipal());
         return accnt;
 
         //return super.doGetAuthenticationInfo(token);
