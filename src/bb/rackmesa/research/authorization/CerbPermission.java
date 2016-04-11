@@ -35,8 +35,9 @@ public class CerbPermission extends WildcardPermission {
 
     public void setWildcardString(String value)
     {
-        this.setParts(wildcardString);
         wildcardString = value;
+        this.setParts(wildcardString);
+
     }
 
     public String getWildcardString()
@@ -48,7 +49,7 @@ public class CerbPermission extends WildcardPermission {
     public CerbPermission(String wildcardString, int permissionID)
     {
         super(wildcardString);
-        setWildcardString(wildcardString);
+        this.wildcardString = wildcardString;
 
         setPermissionID(permissionID);
     }

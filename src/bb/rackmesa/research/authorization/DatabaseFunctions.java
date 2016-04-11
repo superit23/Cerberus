@@ -309,13 +309,31 @@ public class DatabaseFunctions {
             logger.error(ex.getMessage());
         }
 
+        service.getPermissions().add(permission);
+
         return permission;
 
     }
 
-    public static void createRole(Service service, String value, String description)
+    public static CerbRole createRole(Service service, String value, String description)
     {
-        insert("INSERT INTO Roles VALUES(DEFAULT,?,?,?);", new Object[] {service.getServiceID(), value, description});
+        ResultSet results = insert("INSERT INTO Roles VALUES(DEFAULT,?,?,?);", new Object[] {service.getServiceID(), value, description});
+        CerbRole role = null;
+
+        try {
+            if (results.next()) {
+                new CerbRole(value, description, results.getInt(1));
+            }
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+        }
+
+
+        service.getRoles().add(role);
+
+        return role;
 
     }
 
@@ -382,7 +400,7 @@ public class DatabaseFunctions {
     {
         Service service = new Service();
 
-        ResultSet servResults = retrieve("SELECT service_id, is_open_policy, username FROM Services s JOIN Users u ON s.owning_user = u.user_id WHERE name = ?;", new Object[] { name });
+        ResultSet servResults = retrieve("SELECT service_id, is_open_policy, username FROM Services s JOIN Users u ON s.owning_user = u.user_id WHERE service_name = ?;", new Object[] { name });
 
         int serviceID = 0;
         CerbAccount owningUser = null;
