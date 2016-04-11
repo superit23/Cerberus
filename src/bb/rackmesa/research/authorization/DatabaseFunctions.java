@@ -76,8 +76,8 @@ public class DatabaseFunctions {
     {
         try {
             Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
-            PreparedStatement stmt = null;
-            conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
+
 
 
 
@@ -294,6 +294,8 @@ public class DatabaseFunctions {
 
     public static CerbPermission createPermission(Service service, String value, String description)
     {
+        //"INSERT INTO Permissions VALUES(DEFAULT,?,?,?);"
+        //INSERT INTO Permissions (service_id, value, description) VALUES(?,?,?);
         ResultSet results = insert("INSERT INTO Permissions VALUES(DEFAULT,?,?,?);", new Object[] {service.getServiceID(), value, description});
 
         CerbPermission permission = new CerbPermission(value);
