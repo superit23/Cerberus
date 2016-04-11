@@ -148,7 +148,7 @@ public class DatabaseFunctions {
 
     public static HashSet<Permission> getPermissionsForUserByService(String service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id AND d1.service_id = p.service_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
+        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id AND d1.sid = p.service_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
         //HashMap<String,String> permissions = new HashMap<String, String>();
         HashSet<Permission> permissions = new HashSet<>();
 
@@ -197,7 +197,7 @@ public class DatabaseFunctions {
         byte[] salt = null;
 
         try {
-            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, salt FROM (Users u JOIN Services s ON u.service_id = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service});
+            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service});
 
             try {
                 rs.next();
@@ -212,7 +212,7 @@ public class DatabaseFunctions {
             token = rs.getString(1);
             tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(2));
             user_id = rs.getInt(3);
-            salt = Base64.decode(rs.getString(1));
+            salt = Base64.decode(rs.getString(4));
 
             if(tokenExpiration.before(new Date()))
             {
@@ -229,7 +229,7 @@ public class DatabaseFunctions {
             SimplePrincipalCollection sPCollection = new SimplePrincipalCollection();
 
             sPCollection.add(username, "Cerberus");
-            sPCollection.add(user_id, "Cerberus");
+            //sPCollection.add(user_id, "Cerberus");
 
             CerbAccount account = new CerbAccount(service, sPCollection, tokenExpiration, token, salt, "Cerberus", roles, permissions);
             account.setUserID(user_id);
