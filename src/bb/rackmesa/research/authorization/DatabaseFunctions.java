@@ -168,6 +168,7 @@ public class DatabaseFunctions {
 
     }
 
+
     public static HashSet<String> getRolesForUserByService(String service, String username)
     {
         ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
@@ -324,7 +325,7 @@ public class DatabaseFunctions {
 
         try {
             if (results.next()) {
-                new CerbRole(value, description, results.getInt(1));
+                role = new CerbRole(value, description, results.getInt(1));
             }
         }
         catch (SQLException ex)
@@ -408,6 +409,7 @@ public class DatabaseFunctions {
         CerbAccount owningUser = null;
         boolean isOpenPolicy = false;
         List<CerbPermission> permissions = null;
+        List<CerbRole> roles = null;
 
         try {
             servResults.next();
@@ -415,6 +417,7 @@ public class DatabaseFunctions {
             isOpenPolicy = servResults.getBoolean(2);
             owningUser = retrieveUser(name, servResults.getString(3));
             permissions = retrievePermissionsForService(name);
+            roles = retrieveRolesForService(name);
 
         }
         catch (NullPointerException ex)
@@ -433,6 +436,7 @@ public class DatabaseFunctions {
         service.setOwningUser(owningUser);
         service.setName(name);
         service.setPermissions(permissions);
+        service.setRoles(roles);
 
         return service;
     }
@@ -460,6 +464,37 @@ public class DatabaseFunctions {
             }
 
             return permissions;
+
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+            return null;
+        }
+    }
+
+    public static List<CerbRole> retrieveRolesForService(String name)
+    {
+        ResultSet roleResults = retrieve("SELECT role_id, value, description FROM Roles r JOIN Services s ON r.service_id = s.service_id WHERE s.service_name = ?;", new Object[] { name });
+
+        List<CerbRole> roles = new ArrayList<>();
+
+        try
+        {
+
+            while(roleResults.next()) {
+
+                int role_id = roleResults.getInt(1);
+                String value = roleResults.getString(2);
+                String description = roleResults.getString(3);
+
+                CerbRole role = new CerbRole(value, description, role_id);
+
+                roles.add(role);
+
+            }
+
+            return roles;
 
         }
         catch (SQLException ex)
