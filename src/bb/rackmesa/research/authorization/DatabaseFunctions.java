@@ -11,6 +11,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import com.sun.javafx.collections.NonIterableChange;
+import org.apache.logging.log4j.core.util.datetime.DateParser;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.ExpiredCredentialsException;
 import org.apache.shiro.authc.SimpleAccount;
@@ -344,9 +345,10 @@ public class DatabaseFunctions {
     {
         //String uuid = CryptoFunctions.generateUUID();
         String token = null;
+        byte[] salt = CryptoFunctions.generateSalt(75);
 
         try {
-            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), Configuration.getInstance().getApplicationSalt(), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), salt, Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
         }
         catch (NoSuchAlgorithmException ex)
         {
@@ -362,9 +364,9 @@ public class DatabaseFunctions {
             throw new CryptoException("Token could not be created!");
         }
 
-        ResultSet results = insert("INSERT INTO Users VALUES(DEFAULT,?,?,?,?);", new Object[] {service.getServiceID(), username, token, tokenExpiration});
+        ResultSet results = insert("INSERT INTO Users VALUES(DEFAULT,?,?,?,?,?);", new Object[] {service.getServiceID(), username, token, tokenExpiration, Base64.encodeToString(salt)});
 
-        CerbAccount cerbUser = new CerbAccount(service.getName(), username, tokenExpiration, token, CryptoFunctions.generateSalt(75), "Cerberus", new HashSet<String>(), new HashSet<Permission>());
+        CerbAccount cerbUser = new CerbAccount(service.getName(), username, tokenExpiration, token, salt, "Cerberus", new HashSet<String>(), new HashSet<Permission>());
 
         try {
             if (results.next()) {
@@ -374,8 +376,10 @@ public class DatabaseFunctions {
         catch (SQLException ex)
         {
             logger.error(ex.getMessage());
+            return null;
         }
 
+        service.getUsers().add(cerbUser);
         return cerbUser;
     }
 
@@ -410,6 +414,7 @@ public class DatabaseFunctions {
         boolean isOpenPolicy = false;
         List<CerbPermission> permissions = null;
         List<CerbRole> roles = null;
+        List<CerbAccount> users = null;
 
         try {
             servResults.next();
@@ -418,6 +423,7 @@ public class DatabaseFunctions {
             owningUser = retrieveUser(name, servResults.getString(3));
             permissions = retrievePermissionsForService(name);
             roles = retrieveRolesForService(name);
+            users = retrieveUsersForService(name);
 
         }
         catch (NullPointerException ex)
@@ -437,6 +443,7 @@ public class DatabaseFunctions {
         service.setName(name);
         service.setPermissions(permissions);
         service.setRoles(roles);
+        service.setUsers(users);
 
         return service;
     }
@@ -504,24 +511,51 @@ public class DatabaseFunctions {
         }
     }
 
+    public static List<CerbAccount> retrieveUsersForService(String name)
+    {
+        ResultSet userResults = retrieve("SELECT username FROM Users u JOIN Services s ON u.sid = s.service_id WHERE s.service_name = ?;", new Object[] { name });
+
+        List<CerbAccount> users = new ArrayList<>();
+
+        try
+        {
+
+            while(userResults.next()) {
+                users.add(retrieveUser(name, userResults.getString(1)));
+            }
+
+            return users;
+
+        }
+        catch (SQLException ex)
+        {
+            logger.error(ex.getMessage());
+            return null;
+        }
+    }
+
     public static void associatePermissionWithUser(CerbAccount user, CerbPermission permission)
     {
         execute("INSERT INTO Users_Permissions VALUES(DEFAULT,?,?);", new Object[] {user.getUserID(), permission.getPermissionID()});
+        user.getObjectPermissions().add(permission);
     }
 
     public static void associateRoleWithUser(CerbAccount user, CerbRole role)
     {
         execute("INSERT INTO Users_Roles VALUES(DEFAULT,?,?);", new Object[] {user.getUserID(), role.getRoleID()});
+        user.getRoles().add(role.toString());
     }
 
     public static void unassociatePermissionWithUser(CerbAccount user, CerbPermission permission)
     {
         execute("DELETE FROM Users_Permissions WHERE user_id = ? AND permission_id = ?;", new Object[] {user.getUserID(), permission.getPermissionID()});
+        user.getObjectPermissions().remove(permission);
     }
 
     public static void unassociateRoleWithUser(CerbAccount user, CerbRole role)
     {
         execute("DELETE FROM Users_Roles WHERE user_id = ? AND role_id = ?;", new Object[] {user.getUserID(), role.getRoleID()});
+        user.getRoles().remove(role.toString());
     }
 
     public static void updateUser(CerbAccount user)
