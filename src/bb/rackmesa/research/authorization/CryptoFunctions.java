@@ -89,9 +89,15 @@ public class CryptoFunctions {
         return diff == 0;
     }
 
-    private static void TestLogging()
+    public static byte[] combineArrays(byte[] first, byte[] second)
     {
-        logger.warn("BIG BOIS");
+        byte[] combined = new byte[first.length + second.length];
+
+        System.arraycopy(first, 0, combined, 0, first.length);
+        System.arraycopy(second, 0, combined, first.length, second.length);
+
+        return combined;
     }
+
 
 }

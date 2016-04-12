@@ -348,7 +348,7 @@ public class DatabaseFunctions {
         byte[] salt = CryptoFunctions.generateSalt(75);
 
         try {
-            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), salt, Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), CryptoFunctions.combineArrays(Configuration.getInstance().getApplicationSalt(), salt), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
         }
         catch (NoSuchAlgorithmException ex)
         {
