@@ -4,6 +4,8 @@ package bb.rackmesa.research.authorization;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -19,6 +21,20 @@ public class Service {
     private boolean isOpenPolicy;
     private List<CerbRole> roles;
     private List<CerbPermission> permissions;
+
+    public Service()
+    {
+        roles = new ArrayList<>();
+        users = new ArrayList<>();
+        permissions = new ArrayList<>();
+    }
+
+    public Service(String name, CerbAccount owningUser)
+    {
+        this();
+        setName(name);
+        setOwningUser(owningUser);
+    }
 
     public void setName(String value)
     {

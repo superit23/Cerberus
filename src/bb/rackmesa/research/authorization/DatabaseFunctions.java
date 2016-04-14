@@ -75,8 +75,9 @@ public class DatabaseFunctions {
 
     public static ResultSet insert(String query, Object[] params)
     {
+        Connection conn = null;
         try {
-            Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
             PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
 
@@ -100,6 +101,19 @@ public class DatabaseFunctions {
         catch (SQLException ex)
         {
             //System.err.println(ex.getMessage());
+            if(conn != null)
+            {
+                try
+                {
+                    conn.rollback();
+                }
+                catch (SQLException connEx)
+                {
+                    logger.error(connEx.getMessage());
+                }
+
+            }
+
             logger.error(ex.getMessage());
             return null;
         }
@@ -107,8 +121,9 @@ public class DatabaseFunctions {
 
     public static void execute(String query, Object[] params)
     {
+        Connection conn = null;
         try {
-            Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
             PreparedStatement stmt = conn.prepareStatement(query);
 
             for(int i = 0; i < params.length; i++)
@@ -129,6 +144,20 @@ public class DatabaseFunctions {
         catch (SQLException ex)
         {
             //System.err.println(ex.getMessage());
+
+            if(conn != null)
+            {
+                try
+                {
+                    conn.rollback();
+                }
+                catch (SQLException connEx)
+                {
+                    logger.error(connEx.getMessage());
+                }
+
+            }
+
             logger.error(ex.getMessage());
         }
     }
@@ -387,7 +416,8 @@ public class DatabaseFunctions {
     {
         ResultSet results = insert("INSERT INTO Services VALUES(DEFAULT,?,?,?);", new Object[] {name, owningUser.getUserID(), isOpenPolicy});
 
-        Service service = new Service();
+        Service service = new Service(name, owningUser);
+        service.setIsOpenPolicy(isOpenPolicy);
 
         try {
             if (results.next()) {
@@ -398,6 +428,8 @@ public class DatabaseFunctions {
         {
             logger.error(ex.getMessage());
         }
+
+
 
         return service;
 
