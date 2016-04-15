@@ -12,18 +12,18 @@ import java.util.Set;
  */
 public class CerbAccount extends SimpleAccount {
 
-    private String service;
+    private Service service;
     private int userID;
     private byte[] salt;
     private Date tokenExpiration;
 
 
-    public String getService()
+    public Service getService()
     {
         return service;
     }
 
-    public void setService(String value)
+    public void setService(Service value)
     {
         service = value;
     }
@@ -59,7 +59,7 @@ public class CerbAccount extends SimpleAccount {
     }
 
 
-    public CerbAccount(String service, Object principal, Date tokenExpiration, Object credential, byte[] salt, String realmName, Set<String> roles, Set<Permission> permissions)
+    public CerbAccount(Service service, Object principal, Date tokenExpiration, Object credential, byte[] salt, String realmName, Set<String> roles, Set<Permission> permissions)
     {
         super(principal, credential, realmName, roles, permissions);
         this.service = service;

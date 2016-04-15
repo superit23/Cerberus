@@ -25,7 +25,8 @@ public class PBKDF2CredentialMatcher implements CredentialsMatcher {
         String derived = null;
         try {
             uNamesMatch = CryptoFunctions.slowEquals(token.getUsername().getBytes(), (authenticationInfo.getPrincipals().fromRealm("Cerberus").iterator().next().toString().getBytes()));
-            derived = Base64.encodeToString(CryptoFunctions.pbkdf2(token.getPassword(), CryptoFunctions.combineArrays(Configuration.getInstance().getApplicationSalt(), authInfo.getSalt()), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+            byte[] heteroSalt = CryptoFunctions.combineArrays(CryptoFunctions.combineArrays(Configuration.getInstance().getApplicationSalt(), authInfo.getService().getSalt()), authInfo.getSalt());
+            derived = Base64.encodeToString(CryptoFunctions.pbkdf2(token.getPassword(), heteroSalt, Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
         }
         catch (Exception ex)
         {

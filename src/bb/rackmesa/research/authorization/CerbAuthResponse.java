@@ -16,8 +16,9 @@ public class CerbAuthResponse {
     private static Logger logger = LogManager.getLogger(CerbAuthResponse.class);
 
     private String responseText;
-    private String sessionID;
-    private Collection<Permission> permissions;
+    private int sessionID;
+    private String sessionKey;
+    private CerbAccount account;
 
     public String getResponseText()
     {
@@ -29,35 +30,28 @@ public class CerbAuthResponse {
         responseText = value;
     }
 
-    public String getSessionID()
+    public int getSessionID()
     {
         return sessionID;
     }
 
-    public Collection<Permission> getPermissions()
+    public String getSessionKey()
     {
-        return permissions;
+        return sessionKey;
     }
 
-    public boolean TryParseResponse(byte[] key)
+    public CerbAccount getUser()
     {
-        try {
-            AesCipherService aesCipherService = new AesCipherService();
-            aesCipherService.setKeySize(256);
-            byte[] decrypted = aesCipherService.decrypt(Base64.decodeToString(responseText).getBytes(), key).getBytes();
-
-            String decryptedAsString = new String(decrypted);
+        return account;
+    }
 
 
-        }
-        catch (Exception ex)
-        {
-            logger.error(ex.getMessage());
-            return false;
-        }
-
-
-        return true;
+    public CerbAuthResponse(int sessionID, String sessionKey, String responseText, CerbAccount account)
+    {
+        this.sessionID = sessionID;
+        this.sessionKey = sessionKey;
+        this.responseText = responseText;
+        this.account = account;
     }
 
 

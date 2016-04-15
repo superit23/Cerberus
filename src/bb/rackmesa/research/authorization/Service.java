@@ -21,6 +21,7 @@ public class Service {
     private boolean isOpenPolicy;
     private List<CerbRole> roles;
     private List<CerbPermission> permissions;
+    private byte[] salt;
 
     public Service()
     {
@@ -104,6 +105,16 @@ public class Service {
     public List<CerbPermission> getPermissions()
     {
         return permissions;
+    }
+
+    public byte[] getSalt()
+    {
+        return salt;
+    }
+
+    public void setSalt(byte[] value)
+    {
+        salt = value;
     }
 
 }

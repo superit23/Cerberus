@@ -78,10 +78,8 @@ public class DatabaseFunctions {
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            conn.setAutoCommit(false);
             PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
-
-
-
 
             for(int i = 0; i < params.length; i++)
             {
@@ -90,6 +88,7 @@ public class DatabaseFunctions {
 
 
             int affectedRows = stmt.executeUpdate();
+            conn.commit();
 
             if(affectedRows == 0)
             {
@@ -101,6 +100,7 @@ public class DatabaseFunctions {
         catch (SQLException ex)
         {
             //System.err.println(ex.getMessage());
+            logger.error(ex.getMessage());
             if(conn != null)
             {
                 try
@@ -114,7 +114,7 @@ public class DatabaseFunctions {
 
             }
 
-            logger.error(ex.getMessage());
+
             return null;
         }
     }
@@ -124,6 +124,7 @@ public class DatabaseFunctions {
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            conn.setAutoCommit(false);
             PreparedStatement stmt = conn.prepareStatement(query);
 
             for(int i = 0; i < params.length; i++)
@@ -135,6 +136,7 @@ public class DatabaseFunctions {
             //stmt.execute();
 
             int affectedRows = stmt.executeUpdate();
+            conn.commit();
 
             if(affectedRows == 0)
             {
@@ -144,6 +146,8 @@ public class DatabaseFunctions {
         catch (SQLException ex)
         {
             //System.err.println(ex.getMessage());
+
+            logger.error(ex.getMessage());
 
             if(conn != null)
             {
@@ -158,7 +162,6 @@ public class DatabaseFunctions {
 
             }
 
-            logger.error(ex.getMessage());
         }
     }
 
@@ -176,9 +179,9 @@ public class DatabaseFunctions {
         }
     }
 
-    public static HashSet<Permission> getPermissionsForUserByService(String service, String username)
+    public static HashSet<Permission> getPermissionsForUserByService(Service service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id AND d1.sid = p.service_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
+        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id AND d1.sid = p.service_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
         //HashMap<String,String> permissions = new HashMap<String, String>();
         HashSet<Permission> permissions = new HashSet<>();
 
@@ -199,9 +202,9 @@ public class DatabaseFunctions {
     }
 
 
-    public static HashSet<String> getRolesForUserByService(String service, String username)
+    public static HashSet<String> getRolesForUserByService(Service service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
+        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
 
         HashSet<String> roles = new HashSet<>();
 
@@ -220,7 +223,7 @@ public class DatabaseFunctions {
         }
     }
 
-    public static CerbAccount retrieveUser(String service, String username)
+    public static CerbAccount retrieveUser(Service service, String username)
     {
         String token = null;
         Date tokenExpiration = null;
@@ -228,7 +231,7 @@ public class DatabaseFunctions {
         byte[] salt = null;
 
         try {
-            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service});
+            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service.getName()});
 
             try {
                 rs.next();
@@ -374,10 +377,10 @@ public class DatabaseFunctions {
     {
         //String uuid = CryptoFunctions.generateUUID();
         String token = null;
-        byte[] salt = CryptoFunctions.generateSalt(75);
+        byte[] salt = CryptoFunctions.generateSalt(32);
 
         try {
-            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), CryptoFunctions.combineArrays(Configuration.getInstance().getApplicationSalt(), salt), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), CryptoFunctions.combineArrays(CryptoFunctions.combineArrays(Configuration.getInstance().getApplicationSalt(), service.getSalt()) ,salt), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
         }
         catch (NoSuchAlgorithmException ex)
         {
@@ -395,7 +398,7 @@ public class DatabaseFunctions {
 
         ResultSet results = insert("INSERT INTO Users VALUES(DEFAULT,?,?,?,?,?);", new Object[] {service.getServiceID(), username, token, tokenExpiration, Base64.encodeToString(salt)});
 
-        CerbAccount cerbUser = new CerbAccount(service.getName(), username, tokenExpiration, token, salt, "Cerberus", new HashSet<String>(), new HashSet<Permission>());
+        CerbAccount cerbUser = new CerbAccount(service, username, tokenExpiration, token, salt, "Cerberus", new HashSet<String>(), new HashSet<Permission>());
 
         try {
             if (results.next()) {
@@ -414,10 +417,12 @@ public class DatabaseFunctions {
 
     public static Service createService(String name, CerbAccount owningUser, boolean isOpenPolicy)
     {
-        ResultSet results = insert("INSERT INTO Services VALUES(DEFAULT,?,?,?);", new Object[] {name, owningUser.getUserID(), isOpenPolicy});
+        byte[] salt = CryptoFunctions.generateSalt(32);
+        ResultSet results = insert("INSERT INTO Services VALUES(DEFAULT,?,?,?,?);", new Object[] {name, owningUser.getUserID(), isOpenPolicy, Base64.encodeToString(salt)});
 
         Service service = new Service(name, owningUser);
         service.setIsOpenPolicy(isOpenPolicy);
+        service.setSalt(salt);
 
         try {
             if (results.next()) {
@@ -429,8 +434,6 @@ public class DatabaseFunctions {
             logger.error(ex.getMessage());
         }
 
-
-
         return service;
 
     }
@@ -439,7 +442,7 @@ public class DatabaseFunctions {
     {
         Service service = new Service();
 
-        ResultSet servResults = retrieve("SELECT service_id, is_open_policy, username FROM Services s JOIN Users u ON s.owning_user = u.user_id WHERE service_name = ?;", new Object[] { name });
+        ResultSet servResults = retrieve("SELECT service_id, is_open_policy, username, s.salt FROM Services s JOIN Users u ON s.owning_user = u.user_id WHERE service_name = ?;", new Object[] { name });
 
         int serviceID = 0;
         CerbAccount owningUser = null;
@@ -447,15 +450,19 @@ public class DatabaseFunctions {
         List<CerbPermission> permissions = null;
         List<CerbRole> roles = null;
         List<CerbAccount> users = null;
+        byte[] salt = null;
+
+        service.setName(name);
 
         try {
             servResults.next();
             serviceID = servResults.getInt(1);
             isOpenPolicy = servResults.getBoolean(2);
-            owningUser = retrieveUser(name, servResults.getString(3));
-            permissions = retrievePermissionsForService(name);
-            roles = retrieveRolesForService(name);
-            users = retrieveUsersForService(name);
+            owningUser = retrieveUser(service, servResults.getString(3));
+            permissions = retrievePermissionsForService(service);
+            roles = retrieveRolesForService(service);
+            users = retrieveUsersForService(service);
+            salt = Base64.decode(servResults.getString(4));
 
         }
         catch (NullPointerException ex)
@@ -472,17 +479,17 @@ public class DatabaseFunctions {
         service.setServiceID(serviceID);
         service.setIsOpenPolicy(isOpenPolicy);
         service.setOwningUser(owningUser);
-        service.setName(name);
         service.setPermissions(permissions);
         service.setRoles(roles);
         service.setUsers(users);
+        service.setSalt(salt);
 
         return service;
     }
 
-    public static List<CerbPermission> retrievePermissionsForService(String name)
+    public static List<CerbPermission> retrievePermissionsForService(Service service)
     {
-        ResultSet permResults = retrieve("SELECT permission_id, value, description FROM Permissions p JOIN Services s ON p.service_id = s.service_id WHERE s.service_name = ?;", new Object[] { name });
+        ResultSet permResults = retrieve("SELECT permission_id, value, description FROM Permissions p JOIN Services s ON p.service_id = s.service_id WHERE s.service_name = ?;", new Object[] { service.getName() });
 
         List<CerbPermission> permissions = new ArrayList<>();
 
@@ -512,9 +519,9 @@ public class DatabaseFunctions {
         }
     }
 
-    public static List<CerbRole> retrieveRolesForService(String name)
+    public static List<CerbRole> retrieveRolesForService(Service service)
     {
-        ResultSet roleResults = retrieve("SELECT role_id, value, description FROM Roles r JOIN Services s ON r.service_id = s.service_id WHERE s.service_name = ?;", new Object[] { name });
+        ResultSet roleResults = retrieve("SELECT role_id, value, description FROM Roles r JOIN Services s ON r.service_id = s.service_id WHERE s.service_name = ?;", new Object[] { service.getName() });
 
         List<CerbRole> roles = new ArrayList<>();
 
@@ -543,9 +550,9 @@ public class DatabaseFunctions {
         }
     }
 
-    public static List<CerbAccount> retrieveUsersForService(String name)
+    public static List<CerbAccount> retrieveUsersForService(Service service)
     {
-        ResultSet userResults = retrieve("SELECT username FROM Users u JOIN Services s ON u.sid = s.service_id WHERE s.service_name = ?;", new Object[] { name });
+        ResultSet userResults = retrieve("SELECT username FROM Users u JOIN Services s ON u.sid = s.service_id WHERE s.service_name = ?;", new Object[] { service.getName() });
 
         List<CerbAccount> users = new ArrayList<>();
 
@@ -553,7 +560,7 @@ public class DatabaseFunctions {
         {
 
             while(userResults.next()) {
-                users.add(retrieveUser(name, userResults.getString(1)));
+                users.add(retrieveUser(service, userResults.getString(1)));
             }
 
             return users;

@@ -7,14 +7,14 @@ import org.apache.shiro.authc.UsernamePasswordToken;
  */
 public class CerbAuthToken extends UsernamePasswordToken {
 
-    private String service;
+    private Service service;
 
-    public String getService()
+    public Service getService()
     {
         return service;
     }
 
-    public void setService(String service)
+    public void setService(Service service)
     {
         this.service = service;
     }
@@ -22,6 +22,6 @@ public class CerbAuthToken extends UsernamePasswordToken {
     public CerbAuthToken(String service, String user, String pass)
     {
         super(user, pass);
-        setService(service);
+        setService(DatabaseFunctions.retrieveService(service));
     }
 }

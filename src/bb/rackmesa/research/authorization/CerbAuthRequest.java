@@ -37,6 +37,12 @@ public class CerbAuthRequest {
     //    return key;
     //}
 
+    public CerbAuthRequest(String service, String user)
+    {
+        setService(service);
+        setUser(user);
+    }
+
     public void setRequestBody(byte[] key)
     {
         AesCipherService aesCipherService = new AesCipherService();
