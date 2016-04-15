@@ -204,7 +204,7 @@ public class DatabaseFunctions {
 
     public static HashSet<String> getRolesForUserByService(Service service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
+        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Roles ur ON u.user_id = ur.user_id) d1 JOIN Roles r ON d1.roles_id = r.role_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
 
         HashSet<String> roles = new HashSet<>();
 
@@ -575,13 +575,13 @@ public class DatabaseFunctions {
 
     public static void associatePermissionWithUser(CerbAccount user, CerbPermission permission)
     {
-        execute("INSERT INTO Users_Permissions VALUES(DEFAULT,?,?);", new Object[] {user.getUserID(), permission.getPermissionID()});
+        execute("INSERT INTO Users_Permissions VALUES(?,?);", new Object[] {user.getUserID(), permission.getPermissionID()});
         user.getObjectPermissions().add(permission);
     }
 
     public static void associateRoleWithUser(CerbAccount user, CerbRole role)
     {
-        execute("INSERT INTO Users_Roles VALUES(DEFAULT,?,?);", new Object[] {user.getUserID(), role.getRoleID()});
+        execute("INSERT INTO Users_Roles VALUES(?,?);", new Object[] {user.getUserID(), role.getRoleID()});
         user.getRoles().add(role.toString());
     }
 
@@ -593,7 +593,7 @@ public class DatabaseFunctions {
 
     public static void unassociateRoleWithUser(CerbAccount user, CerbRole role)
     {
-        execute("DELETE FROM Users_Roles WHERE user_id = ? AND role_id = ?;", new Object[] {user.getUserID(), role.getRoleID()});
+        execute("DELETE FROM Users_Roles WHERE user_id = ? AND roles_id = ?;", new Object[] {user.getUserID(), role.getRoleID()});
         user.getRoles().remove(role.toString());
     }
 
