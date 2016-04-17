@@ -6,7 +6,11 @@ import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.SimpleAccount;
+import org.apache.shiro.authz.AuthorizationException;
+import org.apache.shiro.authz.AuthorizationInfo;
 import org.apache.shiro.realm.jdbc.JdbcRealm;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.subject.SimplePrincipalCollection;
 
 
 /**
@@ -34,6 +38,14 @@ public class ServiceMappedDBRealm extends JdbcRealm {
         return accnt;
 
         //return super.doGetAuthenticationInfo(token);
+    }
+
+    @Override
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principals) {
+        String username = principals.fromRealm("Cerberus").iterator().next().toString();
+        SimplePrincipalCollection cPrincipals = (SimplePrincipalCollection)principals;
+        return DatabaseFunctions.retrieveUser((Service)cPrincipals.fromRealm("Service").iterator().next(), username);
+
     }
 
 }

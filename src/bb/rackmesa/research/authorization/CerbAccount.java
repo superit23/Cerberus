@@ -67,6 +67,15 @@ public class CerbAccount extends SimpleAccount {
         this.tokenExpiration = tokenExpiration;
     }
 
+    public CerbAccount(Service service, PrincipalCollection principal, Date tokenExpiration, Object credential, byte[] salt, Set<String> roles, Set<Permission> permissions)
+    {
+        //super(principal, credential, realmName, roles, permissions);
+        super(principal, credential, roles, permissions);
+        this.service = service;
+        this.salt = salt;
+        this.tokenExpiration = tokenExpiration;
+    }
+
     @Override
     public boolean equals(Object o)
     {

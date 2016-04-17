@@ -204,7 +204,7 @@ public class DatabaseFunctions {
 
     public static HashSet<String> getRolesForUserByService(Service service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Roles ur ON u.user_id = ur.user_id) d1 JOIN Roles r ON d1.roles_id = r.role_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
+        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Roles ur ON u.user_id = ur.user_id) d1 JOIN Roles r ON d1.role_id = r.role_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
 
         HashSet<String> roles = new HashSet<>();
 
@@ -263,9 +263,10 @@ public class DatabaseFunctions {
             SimplePrincipalCollection sPCollection = new SimplePrincipalCollection();
 
             sPCollection.add(username, "Cerberus");
+            sPCollection.add(service,"Service");
             //sPCollection.add(user_id, "Cerberus");
 
-            CerbAccount account = new CerbAccount(service, sPCollection, tokenExpiration, token, salt, "Cerberus", roles, permissions);
+            CerbAccount account = new CerbAccount(service, sPCollection, tokenExpiration, token, salt, roles, permissions);
             account.setUserID(user_id);
             //account.addObjectPermission(new WildcardPermission("canRecreate:" + rs.getString(3)));
             //account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(4)));
@@ -588,12 +589,12 @@ public class DatabaseFunctions {
     public static void unassociatePermissionWithUser(CerbAccount user, CerbPermission permission)
     {
         execute("DELETE FROM Users_Permissions WHERE user_id = ? AND permission_id = ?;", new Object[] {user.getUserID(), permission.getPermissionID()});
-        user.getObjectPermissions().remove(permission);
+        user.getObjectPermissions().removeIf(obj -> obj.toString() == permission.getWildcardString());
     }
 
     public static void unassociateRoleWithUser(CerbAccount user, CerbRole role)
     {
-        execute("DELETE FROM Users_Roles WHERE user_id = ? AND roles_id = ?;", new Object[] {user.getUserID(), role.getRoleID()});
+        execute("DELETE FROM Users_Roles WHERE user_id = ? AND role_id = ?;", new Object[] {user.getUserID(), role.getRoleID()});
         user.getRoles().remove(role.toString());
     }
 
@@ -609,7 +610,7 @@ public class DatabaseFunctions {
 
     public static void updatePermission(CerbPermission permission)
     {
-        execute("UPDATE Permissions SET value = ?, description = ? WHERE permission_id = ?;", new Object[] {permission.toString(), permission.getDescription(), permission.getPermissionID()});
+        execute("UPDATE Permissions SET value = ?, description = ? WHERE permission_id = ?;", new Object[] {permission.toString().replaceAll("\\[","").replaceAll("]",""), permission.getDescription(), permission.getPermissionID()});
     }
 
     public static void updateRole(CerbRole role)
