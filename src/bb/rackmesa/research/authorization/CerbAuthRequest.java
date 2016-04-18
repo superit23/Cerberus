@@ -11,6 +11,12 @@ public class CerbAuthRequest {
     private String service;
     private String user;
     private String requestBody;
+    private int initializationVector;
+
+    public int getInitializationVector()
+    {
+        return initializationVector;
+    }
 
     public String getService()
     {
@@ -48,6 +54,8 @@ public class CerbAuthRequest {
         AesCipherService aesCipherService = new AesCipherService();
         aesCipherService.setKeySize(256);
         //requestBody =  "AUTH_REQUEST:" + service + ":" + user + ":" + aesCipherService.encrypt((service + ":" + user + ":" + System.currentTimeMillis()).getBytes(), key).toBase64();
+
+        this.initializationVector = aesCipherService.getInitializationVectorSize();
         requestBody =  aesCipherService.encrypt((service + ":" + user + ":" + System.currentTimeMillis()).getBytes(), key).toBase64();
 
     }

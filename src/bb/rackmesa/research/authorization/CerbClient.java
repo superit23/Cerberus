@@ -25,7 +25,7 @@ public class CerbClient {
 
         Client client = builder.newClient();
 
-        WebTarget webTarget = client.target(Configuration.getInstance().getDbConnectionString() + "/authenticate");
+        WebTarget webTarget = client.target(Configuration.getInstance().getCerberusServer() + "/authenticate");
 
         Invocation.Builder invBuilder = webTarget.request();
         Response response = invBuilder.post(Entity.entity(authRequest, MediaType.APPLICATION_JSON_TYPE));
