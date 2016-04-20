@@ -20,14 +20,18 @@ public class CerbDecryptionMatcher implements CredentialsMatcher {
     @Override
     public boolean doCredentialsMatch(AuthenticationToken authenticationToken, AuthenticationInfo authenticationInfo) {
         CerbAuthRequest request = (CerbAuthRequest)authenticationToken;
+        CerbAccount account = (CerbAccount)authenticationInfo;
 
         CerbPassInfo passInfo = DatabaseFunctions.getSecret(request.getService(),request.getUser());
 
         AesCipherService aesCipherService = new AesCipherService();
         aesCipherService.setKeySize(256);
 
+        boolean uNamesMatch = false;
+
         try {
             aesCipherService.decrypt(request.getRequestBody().getBytes(), Base64.decode(passInfo.getToken()));
+            uNamesMatch = request.getUser() == account.getPrincipals().fromRealm("Cerberus").iterator().next().toString();
         }
         catch (CryptoException ex)
         {
@@ -36,6 +40,6 @@ public class CerbDecryptionMatcher implements CredentialsMatcher {
             return false;
         }
 
-        return true;
+        return uNamesMatch;
     }
 }
