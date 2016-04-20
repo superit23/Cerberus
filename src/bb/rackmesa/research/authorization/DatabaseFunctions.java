@@ -165,12 +165,14 @@ public class DatabaseFunctions {
         }
     }
 
-    public static String getSecret(String service, String username)
+    public static CerbPassInfo getSecret(String service, String username)
     {
-        ResultSet rs = retrieve("SELECT token FROM (Users u JOIN Users_Services us ON u.user_id = us.user_id) derived JOIN Services s ON derived.service_id = s.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
+        ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[] {username, service});
 
         try {
-            return rs.getString(0);
+            rs.next();
+            CerbPassInfo passInfo = new CerbPassInfo(rs.getInt(3),rs.getString(1), rs.getDate(2), Base64.decode(rs.getString(4)));
+            return passInfo;
         }
         catch (SQLException ex)
         {
@@ -230,23 +232,29 @@ public class DatabaseFunctions {
         int user_id = 0;
         byte[] salt = null;
 
-        try {
-            ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service.getName()});
+        //try {
+            //ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service.getName()});
+            CerbPassInfo passInfo = getSecret(service.getName(), username);
 
-            try {
-                rs.next();
-            }
-            catch (NullPointerException ex)
-            {
-                logger.warn("User " + username + " for service " + service + " does not exist.");
-                return null;
-            }
+            //try {
+                //rs.next();
+            //}
+            //catch (NullPointerException ex)
+            //{
+            //    logger.warn("User " + username + " for service " + service + " does not exist.");
+            //    return null;
+            //}
 
 
-            token = rs.getString(1);
-            tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(2));
-            user_id = rs.getInt(3);
-            salt = Base64.decode(rs.getString(4));
+            //token = rs.getString(1);
+            //tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(2));
+            //user_id = rs.getInt(3);
+            //salt = Base64.decode(rs.getString(4));
+
+            token = passInfo.getToken();
+            tokenExpiration = passInfo.getExpiration();
+            user_id = passInfo.getUserId();
+            salt = passInfo.getSalt();
 
             if(tokenExpiration.before(new Date()))
             {
@@ -272,18 +280,18 @@ public class DatabaseFunctions {
             //account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(4)));
 
             return account;
-        }
-        catch (SQLException ex)
-        {
-            logger.error(ex.getMessage());
-        }
-        catch (ParseException ex)
-        {
-            logger.error(ex.getMessage());
-        }
+        //}
+        //catch (SQLException ex)
+        //{
+        //    logger.error(ex.getMessage());
+        //}
+        //catch (ParseException ex)
+        //{
+        //    logger.error(ex.getMessage());
+        //}
 
 
-        return  null;
+        //return null;
 
     }
 
