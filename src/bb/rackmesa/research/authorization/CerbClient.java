@@ -1,4 +1,6 @@
 package bb.rackmesa.research.authorization;
+import org.apache.shiro.codec.Base64;
+import org.apache.shiro.crypto.AesCipherService;
 import org.glassfish.jersey.client.ClientConfig;
 import org.glassfish.jersey.client.JerseyClient;
 import org.glassfish.jersey.client.JerseyClientBuilder;
@@ -30,6 +32,18 @@ public class CerbClient {
         Invocation.Builder invBuilder = webTarget.request();
         Response response = invBuilder.post(Entity.entity(authRequest, MediaType.APPLICATION_JSON_TYPE));
 
+    }
+
+    public void processResponse(CerbAuthResponse response)
+    {
+        AesCipherService aesCipherService = new AesCipherService();
+        aesCipherService.setKeySize(256);
+
+
+        //String[] sessionInfo = aesCipherService.decrypt(Base64.decode(response.getEncryptedSession()), key).toString().split(":");
+
+        //int sessionID = Integer.parseInt(sessionInfo[0]);
+        //String sessionKey = sessionInfo[1];
     }
 }
 

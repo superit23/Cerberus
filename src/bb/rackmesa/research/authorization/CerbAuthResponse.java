@@ -18,8 +18,7 @@ public class CerbAuthResponse {
     private static Logger logger = LogManager.getLogger(CerbAuthResponse.class);
 
     private String responseText;
-    private int sessionID;
-    private String sessionKey;
+    private String encryptedSession;
     private CerbAccount account;
 
     public String getResponseText()
@@ -32,14 +31,10 @@ public class CerbAuthResponse {
         responseText = value;
     }
 
-    public int getSessionID()
-    {
-        return sessionID;
-    }
 
-    public String getSessionKey()
+    public String getEncryptedSession()
     {
-        return sessionKey;
+        return encryptedSession;
     }
 
     public CerbAccount getUser()
@@ -48,31 +43,22 @@ public class CerbAuthResponse {
     }
 
 
-    public CerbAuthResponse(int sessionID, String sessionKey, String responseText, CerbAccount account)
-    {
-        this.sessionID = sessionID;
-        this.sessionKey = sessionKey;
-        this.responseText = responseText;
-        this.account = account;
-    }
 
-
-    public CerbAuthResponse(String encryptedSession, byte[] key, String responseText, CerbAccount account)
+    public CerbAuthResponse(String sessionID, String sessionKey, byte[] key, String responseText, CerbAccount account)
     {
         AesCipherService aesCipherService = new AesCipherService();
         aesCipherService.setKeySize(256);
 
+        encryptedSession =  aesCipherService.encrypt((sessionID + ":" + sessionKey + ":" + System.currentTimeMillis()).getBytes(), key).toBase64();
 
-        String[] sessionInfo = aesCipherService.decrypt(Base64.decode(encryptedSession), key).toString().split(":");
-
-        int sessionID = Integer.parseInt(sessionInfo[0]);
-        String sessionKey = sessionInfo[1];
-
-
-        this.sessionID = sessionID;
-        this.sessionKey = sessionKey;
+        this.encryptedSession = encryptedSession;
         this.responseText = responseText;
         this.account = account;
+    }
+
+    public CerbAuthResponse(String responseText)
+    {
+        this.responseText = responseText;
     }
 
 
