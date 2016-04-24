@@ -17,6 +17,8 @@ public class Configuration {
     private int pbkdf2NumBytes;
     private byte[] applicationSalt;
     private long artificialWait;
+    private int userSaltLength;
+    private int serviceSaltLength;
 
     private String cerberusServer;
 
@@ -34,13 +36,12 @@ public class Configuration {
     }
 
 
-    public static Configuration getInstance()
-    {
-        if(Configuration.instance == null)
-            new Configuration();
-
-        return instance;
-    }
+    //public static Configuration getInstance()
+    //{
+    //    if(Configuration.instance == null)
+    //        new Configuration();
+    //    return instance;
+    //}
 
     public String getDbConnectionString()
     {
@@ -100,6 +101,27 @@ public class Configuration {
     public void setCerberusServer(String value)
     {
         cerberusServer = value;
+    }
+
+
+    public int getUserSaltLength()
+    {
+        return userSaltLength;
+    }
+
+    public void setUserSaltLength(int value)
+    {
+        userSaltLength = value;
+    }
+
+    public int getServiceSaltLength()
+    {
+        return serviceSaltLength;
+    }
+
+    public void setServiceSaltLength(int value)
+    {
+        serviceSaltLength = value;
     }
 
 

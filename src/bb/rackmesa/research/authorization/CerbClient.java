@@ -28,7 +28,7 @@ public class CerbClient {
 
     Configuration configuration = ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration();
 
-    public CerbAuthResponse authenticate(CerbAuthRequest authRequest)
+    public CerbAuthResponse authenticate(CerbNegotiationResponse negotiationResponse, CerbAuthRequest authRequest)
     {
         JerseyClientBuilder builder = new JerseyClientBuilder();
         ClientConfig cConfig = new ClientConfig();
@@ -46,16 +46,17 @@ public class CerbClient {
 
     }
 
-    public Subject processResponse(CerbAuthResponse response, String password)
+    public Subject processResponse(CerbNegotiationResponse negotiationResponse, CerbAuthResponse response, String password)
     {
         AesCipherService aesCipherService = new AesCipherService();
         aesCipherService.setKeySize(configuration.getPBDKF2Iterations() * 8);
 
         byte[] key = null;
+        byte[] salt = CryptoFunctions.combineArrays(negotiationResponse.getConfiguration().getApplicationSalt(), CryptoFunctions.combineArrays(negotiationResponse.getServiceSalt(), negotiationResponse.getUserSalt()));
 
         try
         {
-            key = CryptoFunctions.pbkdf2(password.toCharArray(), response.getSalt(), configuration.getPBDKF2Iterations(), configuration.getPBDKF2NumBytes());
+            key = CryptoFunctions.pbkdf2(password.toCharArray(), salt, configuration.getPBDKF2Iterations(), configuration.getPBDKF2NumBytes());
         }
         catch (NoSuchAlgorithmException ex)
         {
@@ -69,11 +70,12 @@ public class CerbClient {
         //int sessionID = Integer.parseInt(sessionInfo[0]);
         //String sessionKey = sessionInfo[1];
 
-        if(response.getResponseText().contains("success"))
+        if(response.getResponseText().contains("succeeded"))
         {
-            String[] sessionInfo = aesCipherService.decrypt(Base64.decode(response.getEncryptedSession()), key).toString().split(":");
-            response.getUser().getSession().setAttribute(sessionInfo[0], sessionInfo[1]);
-            return response.getUser();
+            String sessionInfo = Base64.decodeToString(aesCipherService.decrypt(Base64.decode(response.getEncryptedSession()), key).toString());
+            String[] sessionSplit = sessionInfo.split(":");
+            response.getSubject().getSession().setAttribute(sessionSplit[0], sessionSplit[1]);
+            return response.getSubject();
         }
         else
         {

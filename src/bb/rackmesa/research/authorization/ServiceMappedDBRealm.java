@@ -2,6 +2,7 @@ package bb.rackmesa.research.authorization;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
@@ -22,19 +23,22 @@ public class ServiceMappedDBRealm extends JdbcRealm {
 
     @Override
     protected org.apache.shiro.authc.AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken token) throws AuthenticationException {
-        CerbAuthToken cToken = (CerbAuthToken)token;
+        //CerbAuthToken cToken = (CerbAuthToken)token;
+        CerbAuthRequest cToken = (CerbAuthRequest)token;
+        Configuration configuration = ((CerbSecurityManager) SecurityUtils.getSecurityManager()).getConfiguration();
 
-        logger.trace("Sleeping " + Configuration.getInstance().getArtificialWait() + " milliseconds.");
+        logger.trace("Sleeping " + configuration.getArtificialWait() + " milliseconds.");
         try
         {
-            Thread.sleep(Configuration.getInstance().getArtificialWait());
+            Thread.sleep(configuration.getArtificialWait());
         }
         catch (InterruptedException ex)
         {
             logger.error(ex.getMessage());
         }
 
-        CerbAccount accnt = DatabaseFunctions.retrieveUser(cToken.getService(), (String)cToken.getPrincipal());
+        Service service = DatabaseFunctions.retrieveService(cToken.getService());
+        CerbAccount accnt = DatabaseFunctions.retrieveUser(service, (String)cToken.getPrincipal());
         return accnt;
 
         //return super.doGetAuthenticationInfo(token);

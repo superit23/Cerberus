@@ -1,6 +1,7 @@
 package bb.rackmesa.research.authorization;
 
 import com.sun.deploy.util.ArrayUtil;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationInfo;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -20,13 +21,15 @@ public class PBKDF2CredentialMatcher implements CredentialsMatcher {
     public boolean doCredentialsMatch(AuthenticationToken authenticationToken, AuthenticationInfo authenticationInfo) {
         UsernamePasswordToken token = (UsernamePasswordToken)authenticationToken;
         CerbAccount authInfo = (CerbAccount)authenticationInfo;
+        Configuration configuration = ((CerbSecurityManager) SecurityUtils.getSecurityManager()).getConfiguration();
+
         //boolean uNamesMatch = token.getUsername() == authenticationInfo.getPrincipals().fromRealm("Cerberus").iterator().next().toString();
         boolean uNamesMatch = false;
         String derived = null;
         try {
             uNamesMatch = CryptoFunctions.slowEquals(token.getUsername().getBytes(), (authenticationInfo.getPrincipals().fromRealm("Cerberus").iterator().next().toString().getBytes()));
-            byte[] heteroSalt = CryptoFunctions.combineArrays(CryptoFunctions.combineArrays(Configuration.getInstance().getApplicationSalt(), authInfo.getService().getSalt()), authInfo.getSalt());
-            derived = Base64.encodeToString(CryptoFunctions.pbkdf2(token.getPassword(), heteroSalt, Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+            byte[] heteroSalt = CryptoFunctions.combineArrays(CryptoFunctions.combineArrays(configuration.getApplicationSalt(), authInfo.getService().getSalt()), authInfo.getSalt());
+            derived = Base64.encodeToString(CryptoFunctions.pbkdf2(token.getPassword(), heteroSalt, configuration.getPBDKF2Iterations(), configuration.getPBDKF2NumBytes()));
         }
         catch (Exception ex)
         {

@@ -21,13 +21,8 @@ public class CerbAuthResponse {
 
     private String responseText;
     private String encryptedSession;
-    private Subject account;
-    private byte[] salt;
+    private Subject subject;
 
-
-    public void setSalt(byte[] value) { salt = value; }
-
-    public byte[] getSalt() { return salt; }
 
     public String getResponseText()
     {
@@ -45,14 +40,14 @@ public class CerbAuthResponse {
         return encryptedSession;
     }
 
-    public Subject getUser()
+    public Subject getSubject()
     {
-        return account;
+        return subject;
     }
 
 
 
-    public CerbAuthResponse(String sessionID, String sessionKey, byte[] key, String responseText, Subject account, byte[] salt)
+    public CerbAuthResponse(String sessionID, String sessionKey, byte[] key, String responseText, Subject subject)
     {
         Configuration configuration = ((CerbSecurityManager) SecurityUtils.getSecurityManager()).getConfiguration();
 
@@ -63,8 +58,7 @@ public class CerbAuthResponse {
 
         this.encryptedSession = encryptedSession;
         this.responseText = responseText;
-        this.account = account;
-        setSalt(salt);
+        this.subject = subject;
     }
 
     public CerbAuthResponse(String responseText)

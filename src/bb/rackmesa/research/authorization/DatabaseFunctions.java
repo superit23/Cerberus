@@ -12,6 +12,7 @@ import java.util.concurrent.FutureTask;
 
 import com.sun.javafx.collections.NonIterableChange;
 import org.apache.logging.log4j.core.util.datetime.DateParser;
+import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.ExpiredCredentialsException;
 import org.apache.shiro.authc.SimpleAccount;
@@ -37,7 +38,7 @@ public class DatabaseFunctions {
     public static ResultSet retrieve(String query, Object[] params, int magic_constant)
     {
         try {
-            Connection conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            Connection conn = DriverManager.getConnection(((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration().getDbConnectionString());
             PreparedStatement stmt = null;
 
             if(magic_constant != -1)
@@ -77,7 +78,7 @@ public class DatabaseFunctions {
     {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            conn = DriverManager.getConnection(((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration().getDbConnectionString());
             conn.setAutoCommit(false);
             PreparedStatement stmt = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
@@ -114,7 +115,6 @@ public class DatabaseFunctions {
 
             }
 
-
             return null;
         }
     }
@@ -123,7 +123,7 @@ public class DatabaseFunctions {
     {
         Connection conn = null;
         try {
-            conn = DriverManager.getConnection(Configuration.getInstance().getDbConnectionString());
+            conn = DriverManager.getConnection(((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration().getDbConnectionString());
             conn.setAutoCommit(false);
             PreparedStatement stmt = conn.prepareStatement(query);
 
@@ -170,9 +170,15 @@ public class DatabaseFunctions {
         ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[] {username, service});
 
         try {
-            rs.next();
-            CerbPassInfo passInfo = new CerbPassInfo(rs.getInt(3),rs.getString(1), rs.getDate(2), Base64.decode(rs.getString(4)));
-            return passInfo;
+            if(rs.next()) {
+                CerbPassInfo passInfo = new CerbPassInfo(rs.getInt(3), rs.getString(1), rs.getDate(2), Base64.decode(rs.getString(4)));
+                return passInfo;
+            }
+            else
+            {
+                logger.error("getSecret: Resultset is empty!");
+                return null;
+            }
         }
         catch (SQLException ex)
         {
@@ -180,6 +186,7 @@ public class DatabaseFunctions {
             return null;
         }
     }
+
 
     public static HashSet<Permission> getPermissionsForUserByService(Service service, String username)
     {
@@ -225,73 +232,44 @@ public class DatabaseFunctions {
         }
     }
 
-    public static CerbAccount retrieveUser(Service service, String username)
-    {
+    public static CerbAccount retrieveUser(Service service, String username) {
         String token = null;
         Date tokenExpiration = null;
         int user_id = 0;
         byte[] salt = null;
 
-        //try {
-            //ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[]{username, service.getName()});
-            CerbPassInfo passInfo = getSecret(service.getName(), username);
-
-            //try {
-                //rs.next();
-            //}
-            //catch (NullPointerException ex)
-            //{
-            //    logger.warn("User " + username + " for service " + service + " does not exist.");
-            //    return null;
-            //}
+        CerbPassInfo passInfo = getSecret(service.getName(), username);
 
 
-            //token = rs.getString(1);
-            //tokenExpiration = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(rs.getString(2));
-            //user_id = rs.getInt(3);
-            //salt = Base64.decode(rs.getString(4));
+        token = passInfo.getToken();
+        tokenExpiration = passInfo.getExpiration();
+        user_id = passInfo.getUserId();
+        salt = passInfo.getSalt();
 
-            token = passInfo.getToken();
-            tokenExpiration = passInfo.getExpiration();
-            user_id = passInfo.getUserId();
-            salt = passInfo.getSalt();
-
-            if(tokenExpiration.before(new Date()))
-            {
-                String exceptionString = "User '" + username + "' for service '" + service + "' expired. Logon failed.";
-                logger.warn(exceptionString);
-                throw new ExpiredCredentialsException(exceptionString);
-                //return null;
-            }
+        if (tokenExpiration.before(new Date())) {
+            String exceptionString = "User '" + username + "' for service '" + service.getName() + "' expired. Retrieve failed.";
+            logger.warn(exceptionString);
+            throw new ExpiredCredentialsException(exceptionString);
+            //return null;
+        }
 
 
-            HashSet<Permission> permissions = getPermissionsForUserByService(service, username);
-            HashSet<String> roles = getRolesForUserByService(service, username);
+        HashSet<Permission> permissions = getPermissionsForUserByService(service, username);
+        HashSet<String> roles = getRolesForUserByService(service, username);
 
-            SimplePrincipalCollection sPCollection = new SimplePrincipalCollection();
+        SimplePrincipalCollection sPCollection = new SimplePrincipalCollection();
 
-            sPCollection.add(username, "Cerberus");
-            sPCollection.add(service,"Service");
-            //sPCollection.add(user_id, "Cerberus");
+        sPCollection.add(username, "Cerberus");
+        sPCollection.add(service, "Service");
+        //sPCollection.add(user_id, "Cerberus");
 
-            CerbAccount account = new CerbAccount(service, sPCollection, tokenExpiration, token, salt, roles, permissions);
-            account.setUserID(user_id);
-            //account.addObjectPermission(new WildcardPermission("canRecreate:" + rs.getString(3)));
-            //account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(4)));
+        CerbAccount account = new CerbAccount(service, sPCollection, tokenExpiration, token, salt, roles, permissions);
+        account.setUserID(user_id);
+        //account.addObjectPermission(new WildcardPermission("canRecreate:" + rs.getString(3)));
+        //account.addObjectPermission(new WildcardPermission("isOpenPolicy:" + rs.getString(4)));
 
-            return account;
-        //}
-        //catch (SQLException ex)
-        //{
-        //    logger.error(ex.getMessage());
-        //}
-        //catch (ParseException ex)
-        //{
-        //    logger.error(ex.getMessage());
-        //}
+        return account;
 
-
-        //return null;
 
     }
 
@@ -385,11 +363,14 @@ public class DatabaseFunctions {
     public static CerbAccount createUser(Service service, String username, String password, Date tokenExpiration)
     {
         //String uuid = CryptoFunctions.generateUUID();
+
+        Configuration configuration = ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration();
+
         String token = null;
-        byte[] salt = CryptoFunctions.generateSalt(32);
+        byte[] salt = CryptoFunctions.generateSalt(configuration.getUserSaltLength());
 
         try {
-            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), CryptoFunctions.combineArrays(CryptoFunctions.combineArrays(Configuration.getInstance().getApplicationSalt(), service.getSalt()) ,salt), Configuration.getInstance().getPBDKF2Iterations(), Configuration.getInstance().getPBDKF2NumBytes()));
+            token = org.apache.shiro.codec.Base64.encodeToString(CryptoFunctions.pbkdf2(password.toCharArray(), CryptoFunctions.combineArrays(CryptoFunctions.combineArrays(((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration().getApplicationSalt(), service.getSalt()) ,salt), ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration().getPBDKF2Iterations(), ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration().getPBDKF2NumBytes()));
         }
         catch (NoSuchAlgorithmException ex)
         {
@@ -426,7 +407,9 @@ public class DatabaseFunctions {
 
     public static Service createService(String name, CerbAccount owningUser, boolean isOpenPolicy)
     {
-        byte[] salt = CryptoFunctions.generateSalt(32);
+        Configuration configuration = ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration();
+
+        byte[] salt = CryptoFunctions.generateSalt(configuration.getServiceSaltLength());
         ResultSet results = insert("INSERT INTO Services VALUES(DEFAULT,?,?,?,?);", new Object[] {name, owningUser.getUserID(), isOpenPolicy, Base64.encodeToString(salt)});
 
         Service service = new Service(name, owningUser);
@@ -464,19 +447,23 @@ public class DatabaseFunctions {
         service.setName(name);
 
         try {
-            servResults.next();
-            serviceID = servResults.getInt(1);
-            isOpenPolicy = servResults.getBoolean(2);
-            owningUser = retrieveUser(service, servResults.getString(3));
-            permissions = retrievePermissionsForService(service);
-            roles = retrieveRolesForService(service);
-            users = retrieveUsersForService(service);
-            salt = Base64.decode(servResults.getString(4));
+            if(servResults.next()) {
+                serviceID = servResults.getInt(1);
+                isOpenPolicy = servResults.getBoolean(2);
+                owningUser = retrieveUser(new Service("Cerberus", null), servResults.getString(3));
+                permissions = retrievePermissionsForService(service);
+                roles = retrieveRolesForService(service);
+                users = retrieveUsersForService(service);
+                salt = Base64.decode(servResults.getString(4));
+            }
+            else {
+                logger.error("No results in results set!");
+            }
 
         }
         catch (NullPointerException ex)
         {
-            logger.warn("Service " + service + " does not exist.");
+            logger.warn("Service " + name + " does not exist.");
             return null;
         }
         catch (SQLException ex)
