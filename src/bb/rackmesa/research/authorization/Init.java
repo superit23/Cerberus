@@ -4,6 +4,7 @@ import org.apache.logging.log4j.core.util.datetime.DateParser;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.codec.Base64;
 import org.apache.shiro.mgt.DefaultSecurityManager;
+import org.apache.shiro.subject.Subject;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -63,6 +64,19 @@ public class Init {
         configuration.setCerberusServer("http://cerberus-bb2.cloudapp.net");
         configuration.setUserSaltLength(4);
         configuration.setServiceSaltLength(4);
+    }
+
+    public static Subject EasyAuth(String service, String user, String password)
+    {
+        CerbServer cerbServer = new CerbServer();
+        CerbClient cerbClient = new CerbClient();
+
+        CerbNegotiationResponse negotiationResponse = cerbServer.negotiate(service, user);
+
+        CerbAuthRequest request = new CerbAuthRequest(negotiationResponse, service, user, password);
+
+        CerbAuthResponse response = cerbServer.authenticate(request);
+        return cerbClient.processResponse(negotiationResponse, response, password);
     }
 
 }
