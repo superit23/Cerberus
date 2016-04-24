@@ -26,7 +26,7 @@ public class CerbClient {
 
     private static Logger logger = LogManager.getLogger(CerbAuthResponse.class);
 
-    Configuration configuration = ((CerbSecurityManager) SecurityUtils.getSecurityManager()).getConfiguration();
+    Configuration configuration = ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration();
 
     public CerbAuthResponse authenticate(CerbAuthRequest authRequest)
     {
