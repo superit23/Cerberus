@@ -12,7 +12,7 @@ import java.util.List;
  * Created by Dan on 3/27/2016.
  */
 public class Service {
-    private static Logger logger = LoggerFactory.getLogger(DatabaseFunctions.class);
+    private static Logger logger = LoggerFactory.getLogger(Service.class);
 
     private int serviceID;
     private String name;

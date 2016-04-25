@@ -11,7 +11,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
 import com.sun.javafx.collections.NonIterableChange;
-import org.apache.logging.log4j.core.util.datetime.DateParser;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.ExpiredCredentialsException;

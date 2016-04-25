@@ -1,6 +1,5 @@
 package bb.rackmesa.research.authorization;
 
-import org.apache.logging.log4j.core.util.datetime.DateParser;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.codec.Base64;
 import org.apache.shiro.mgt.DefaultSecurityManager;

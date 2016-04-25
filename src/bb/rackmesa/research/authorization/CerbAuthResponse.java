@@ -2,7 +2,6 @@ package bb.rackmesa.research.authorization;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.plugins.convert.TypeConverters;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authz.Permission;
 import org.apache.shiro.codec.Base64;

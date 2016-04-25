@@ -1,6 +1,5 @@
 package bb.rackmesa.research.authorization;
 
-import org.apache.logging.log4j.core.config.plugins.convert.TypeConverters;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationInfo;

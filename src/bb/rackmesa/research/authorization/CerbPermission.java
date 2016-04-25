@@ -64,8 +64,10 @@ public class CerbPermission extends WildcardPermission {
     @Override
     public boolean equals(Object o)
     {
-        CerbPermission other = (CerbPermission)o;
+        return super.equals(o);
 
-        return other.getPermissionID() == this.getPermissionID() && other.getDescription() == this.getDescription() && other.getWildcardString() == this.getWildcardString();
+        //CerbPermission other = (CerbPermission)o;
+
+        //return other.getPermissionID() == this.getPermissionID() && other.getDescription() == this.getDescription() && other.getWildcardString() == this.getWildcardString();
     }
 }
