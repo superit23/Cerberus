@@ -457,6 +457,8 @@ public class DatabaseFunctions {
             }
             else {
                 logger.error("No results in results set!");
+                logger.warn("Service " + name + " does not exist.");
+                return null;
             }
 
         }
