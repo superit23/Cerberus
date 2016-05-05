@@ -13,6 +13,7 @@ public class CerbPassInfo {
 
     public  CerbPassInfo(int user_id,String token, Date expiration, byte[] salt)
     {
+        this.user_id = user_id;
         this.token = token;
         this.expiration = expiration;
         this.salt = salt;

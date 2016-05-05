@@ -48,6 +48,6 @@ public class CerbServer {
 
     public CerbNegotiationResponse negotiate(String service, String username)
     {
-        return new CerbNegotiationResponse(service, username, ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration());
+        return new CerbNegotiationResponse(service, username, ((CerbSecurityManager)SecurityUtils.getSecurityManager()).getConfiguration().stripClone());
     }
 }

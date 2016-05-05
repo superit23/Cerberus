@@ -58,7 +58,8 @@ public class Init {
         configuration.setApplicationSalt(Base64.decode("rM+2a3ZBSUg="));
         configuration.setPBDKF2Iterations(4096);
         configuration.setPBDKF2NumBytes(32);
-        configuration.setDbConnectionString("jdbc:postgresql://cerberus-bb2.cloudapp.net:5432/cerberus?user=cerb&password=cis347");
+        //configuration.setDbConnectionString("jdbc:postgresql://cerberus-bb2.cloudapp.net:5432/cerberus?user=cerb&password=cis347");
+        configuration.setDbConnectionString("jdbc:mysql://cerberus-bb2.cloudapp.net:3306/Cerberus?user=cerb&password=cis347");
         configuration.setArtificialWait(100);
         configuration.setCerberusServer("http://cerberus-bb2.cloudapp.net");
         configuration.setUserSaltLength(4);

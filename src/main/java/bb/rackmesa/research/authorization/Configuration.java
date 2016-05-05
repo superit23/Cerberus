@@ -124,5 +124,16 @@ public class Configuration {
         serviceSaltLength = value;
     }
 
+    public Configuration stripClone()
+    {
+        Configuration newConf = new Configuration();
+        newConf.setCerberusServer(this.cerberusServer);
+        newConf.setApplicationSalt(this.applicationSalt);
+        newConf.setPBDKF2Iterations(this.pbkdf2Iterations);
+        newConf.setPBDKF2NumBytes(this.pbkdf2NumBytes);
+
+        return newConf;
+    }
+
 
 }

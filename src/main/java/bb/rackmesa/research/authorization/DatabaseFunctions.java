@@ -10,6 +10,7 @@ import java.util.Date;
 import java.util.concurrent.Callable;
 import java.util.concurrent.FutureTask;
 
+import com.jolbox.bonecp.BoneCPConfig;
 import com.sun.javafx.collections.NonIterableChange;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.authc.AuthenticationException;
@@ -166,7 +167,7 @@ public class DatabaseFunctions {
 
     public static CerbPassInfo getSecret(String service, String username)
     {
-        ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM (Users u JOIN Services s ON u.sid = s.service_id) WHERE username = ? AND service_name = ?;", new Object[] {username, service});
+        ResultSet rs = retrieve("SELECT token, token_expiration, user_id, u.salt FROM Users u JOIN Services s ON u.sid = s.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service});
 
         try {
             if(rs.next()) {
@@ -189,7 +190,8 @@ public class DatabaseFunctions {
 
     public static HashSet<Permission> getPermissionsForUserByService(Service service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id AND d1.sid = p.service_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
+        //ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Permissions up ON u.user_id = up.user_id) d1 JOIN Permissions p ON d1.permission_id = p.permission_id AND d1.sid = p.service_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
+        ResultSet rs = retrieve("SELECT value, description FROM Users u JOIN Users_Permissions up ON u.user_id = up.user_id JOIN Permissions p ON up.permission_id = p.permission_id AND u.sid = p.service_id JOIN Services s ON s.service_id = u.sid WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
         //HashMap<String,String> permissions = new HashMap<String, String>();
         HashSet<Permission> permissions = new HashSet<Permission>();
 
@@ -212,7 +214,8 @@ public class DatabaseFunctions {
 
     public static HashSet<String> getRolesForUserByService(Service service, String username)
     {
-        ResultSet rs = retrieve("SELECT value, description FROM ((Users u JOIN Users_Roles ur ON u.user_id = ur.user_id) d1 JOIN Roles r ON d1.role_id = r.role_id) d2 JOIN Services s ON s.service_id = d2.service_id WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
+        //ResultSet rs = retrieve("SELECT value, description FROM Users u JOIN Users_Roles ur ON u.user_id = ur.user_id JOIN Roles r ON ur.role_id = r.role_id JOIN Services s ON s.service_id = u.sid WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
+        ResultSet rs = retrieve("SELECT value, description FROM Users u JOIN Users_Roles ur ON u.user_id = ur.user_id JOIN Roles r ON ur.role_id = r.role_id JOIN Services s ON s.service_id = u.sid WHERE username = ? AND service_name = ?;", new Object[] {username, service.getName()});
 
         HashSet<String> roles = new HashSet<String>();
 
